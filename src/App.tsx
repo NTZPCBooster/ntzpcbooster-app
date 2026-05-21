@@ -106,7 +106,7 @@ function App() {
     const script = undo ? opt.undoScript : opt.script;
     if (!script) return;
 
-    if ((window as any).__TAURI__) {
+    if ((window as any).__TAURI_INTERNALS__) {
       const { Command } = await import("@tauri-apps/plugin-shell");
       const cmd = opt.admin
         ? Command.create("powershell", [

@@ -65,7 +65,7 @@ $result | ConvertTo-Json
 
 /** Executes the PowerShell sysinfo script and parses the result into PCInfo. */
 async function fetchPCInfo(): Promise<PCInfo | null> {
-  if (!(window as any).__TAURI__) return null;
+  if (!(window as any).__TAURI_INTERNALS__) return null;
   try {
     const { Command } = await import('@tauri-apps/plugin-shell');
     const cmd = Command.create('powershell', [
