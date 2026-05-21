@@ -1028,7 +1028,7 @@ input { font-family: inherit; }
 .optrow__main {
   width: 100%;
   display: grid;
-  grid-template-columns: 44px 1fr 24px 100px;
+  grid-template-columns: 44px 1fr 24px auto;
   align-items: center;
   gap: var(--s4);
   padding: 14px var(--s4);
@@ -1427,6 +1427,7 @@ input { font-family: inherit; }
 }
 .optrow__run-group {
   display: flex; align-items: center; gap: 10px;
+  min-width: 0;
 }
 .optrow__lastran {
   font-size: 11px;
@@ -1434,6 +1435,7 @@ input { font-family: inherit; }
   display: flex; align-items: center; gap: 4px;
   opacity: 0.85;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .spinner-label {
   font-size: 11px;
