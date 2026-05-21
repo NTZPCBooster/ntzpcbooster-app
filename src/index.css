@@ -1425,6 +1425,16 @@ input { font-family: inherit; }
   display: flex; align-items: center; gap: 6px;
   color: var(--accent);
 }
+.optrow__run-group {
+  display: flex; align-items: center; gap: 10px;
+}
+.optrow__lastran {
+  font-size: 11px;
+  color: var(--ok, #22c55e);
+  display: flex; align-items: center; gap: 4px;
+  opacity: 0.85;
+  white-space: nowrap;
+}
 .spinner-label {
   font-size: 11px;
   color: var(--ink-3);

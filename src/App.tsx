@@ -21,6 +21,7 @@ interface PersistedState {
   grid: boolean;
   applied: Record<string, boolean>;
   history: HistoryEntry[];
+  lastRan: Record<string, string>; // id → ISO timestamp of last execution
 }
 
 function loadPersisted(): Partial<PersistedState> {
@@ -53,6 +54,7 @@ function App() {
   const [applied, setApplied] = useState<Record<string, boolean>>(persisted.current.applied || {});
   const [toast, setToast] = useState<{ msg: string; kind: string; id: number } | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>(persisted.current.history || HISTORY);
+  const [lastRan, setLastRan] = useState<Record<string, string>>(persisted.current.lastRan || {});
 
   // Loading / running states
   const [running, setRunning] = useState<Set<string>>(new Set());
@@ -71,8 +73,8 @@ function App() {
 
   // Persist state on change
   useEffect(() => {
-    savePersisted({ theme, accent, density, grid, applied, history });
-  }, [theme, accent, density, grid, applied, history]);
+    savePersisted({ theme, accent, density, grid, applied, history, lastRan });
+  }, [theme, accent, density, grid, applied, history, lastRan]);
 
   // Apply theme / accent / density / grid to root
   useEffect(() => {
@@ -159,6 +161,7 @@ function App() {
       try {
         await executeScript(item);
         setApplied((prev) => ({ ...prev, [id]: true }));
+        setLastRan((prev) => ({ ...prev, [id]: new Date().toISOString() }));
         showToast(`Executado: ${item.title}`);
         addHistory(item.title, "executado", item.category);
       } catch {
@@ -259,6 +262,12 @@ function App() {
             return next;
           });
         }
+        const now = new Date().toISOString();
+        setLastRan((prev) => {
+          const next = { ...prev };
+          opts.forEach((o) => { next[o.id] = now; });
+          return next;
+        });
         showToast("Limpeza completa concluída");
         addHistory("Limpeza Completa", "espaço liberado", "limpeza");
       }
@@ -321,6 +330,7 @@ function App() {
             onToggle={toggle}
             onApply={apply}
             running={running}
+            lastRan={lastRan}
           />
         );
       case "tweaks":

@@ -2,6 +2,18 @@ import { useState, useMemo } from 'react';
 import { Icon, Switch } from './primitives';
 import { Optimization } from '../types';
 
+/** Format an ISO timestamp into a relative "há X" string. */
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return 'agora';
+  if (mins < 60) return `há ${mins} min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `há ${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  return `há ${days}d`;
+}
+
 // ─────────────── OPTIMIZATION ROW ───────────────
 interface OptimizationRowProps {
   item: Optimization;
@@ -11,9 +23,10 @@ interface OptimizationRowProps {
   expanded: boolean;
   onToggleExpand: () => void;
   isRunning: boolean;
+  lastRanAt?: string;
 }
 
-function OptimizationRow({ item, applied, onToggle, onApply, expanded, onToggleExpand, isRunning }: OptimizationRowProps) {
+function OptimizationRow({ item, applied, onToggle, onApply, expanded, onToggleExpand, isRunning, lastRanAt }: OptimizationRowProps) {
   const isToggle = !item.runOnce;
   return (
     <li className={`optrow ${expanded ? 'is-open' : ''} ${applied ? 'is-applied' : ''} ${isRunning ? 'is-running' : ''}`}>
@@ -44,9 +57,16 @@ function OptimizationRow({ item, applied, onToggle, onApply, expanded, onToggleE
               <Switch on={applied} onChange={onToggle} />
             </div>
           ) : (
-            <button className="btn btn--ghost btn--small" onClick={onApply}>
-              <Icon name="rocket" size={12} /> executar
-            </button>
+            <div className="optrow__run-group">
+              {lastRanAt && (
+                <span className="optrow__lastran mono">
+                  <Icon name="check" size={10} /> {timeAgo(lastRanAt)}
+                </span>
+              )}
+              <button className="btn btn--ghost btn--small" onClick={onApply}>
+                <Icon name="rocket" size={12} /> executar
+              </button>
+            </div>
           )}
         </div>
       </button>
@@ -81,9 +101,10 @@ interface OptListProps {
   subtitle: string;
   code: string;
   running: Set<string>;
+  lastRan?: Record<string, string>;
 }
 
-export function OptList({ items, applied, onToggle, onApply, title, subtitle, code, running }: OptListProps) {
+export function OptList({ items, applied, onToggle, onApply, title, subtitle, code, running, lastRan }: OptListProps) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
@@ -153,6 +174,7 @@ export function OptList({ items, applied, onToggle, onApply, title, subtitle, co
             expanded={expanded === it.id}
             onToggleExpand={() => setExpanded(expanded === it.id ? null : it.id)}
             isRunning={running.has(it.id)}
+            lastRanAt={lastRan?.[it.id]}
           />
         ))}
       </ul>
