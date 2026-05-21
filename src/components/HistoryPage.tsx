@@ -1,4 +1,3 @@
-import React from 'react';
 import { TickFrame } from './primitives';
 import { HistoryEntry } from '../types';
 

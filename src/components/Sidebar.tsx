@@ -1,4 +1,3 @@
-import React from 'react';
 import { Icon, Logo } from './primitives';
 import { CATEGORIES } from '../data';
 

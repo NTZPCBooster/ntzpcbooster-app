@@ -1,5 +1,33 @@
 /* ════════════════════════════════════════════════════════════════
    PCBooster — Blueprint Industrial Theme
+   ════════════════════════════════════════════════════════════════
+
+   TABLE OF CONTENTS
+   ─────────────────
+   1. Design tokens
+   2. Dark theme
+   3. Light theme
+   4. Accent variants
+   5. Reset + base
+   6. Shell + grid background
+   7. Sidebar
+   8. Main layout + topbar
+   9. Hero (greeting, score, stats)
+  10. Score gauge
+  11. Driver banner
+  12. One-click bar
+  13. Section titles
+  14. Stats grid (StatCard)
+  15. Disk card
+  16. Bottom row (quickjump, recent)
+  17. Optimization rows (OptList)
+  18. Badges
+  19. Hardware page
+  20. History page
+  21. Appearance panel
+  22. Confirm dialog
+  23. Toast
+  24. Utilities (switch, spinner, scrollbar)
    ════════════════════════════════════════════════════════════════ */
 
 /* ── design tokens ─────────────────────────────────────── */

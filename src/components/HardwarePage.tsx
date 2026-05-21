@@ -1,4 +1,3 @@
-import React from 'react';
 import { TickFrame } from './primitives';
 import { PCInfo } from '../types';
 
@@ -7,7 +6,7 @@ interface HardwarePageProps {
   loading?: boolean;
 }
 
-export function HardwarePage({ pc, loading }: HardwarePageProps) {
+export function HardwarePage({ pc, loading: _loading }: HardwarePageProps) {
   const cards: Array<{ label: string; k: string; name: string; lines: string[]; highlight?: boolean }> = [
     {
       label: 'PROCESSADOR',

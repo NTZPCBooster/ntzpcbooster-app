@@ -1,158 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { Icon, TickFrame, Sparkline, ScoreGauge, useLiveSeries } from './primitives';
-import { CATEGORIES } from '../data';
-import { PCInfo, HistoryEntry } from '../types';
+/**
+ * Hero — Main dashboard view.
+ *
+ * Composes StatCard, DriverBanner, OneClickBar and several TickFrame
+ * sections into the full "Painel" page the user sees on launch.
+ */
+import { useState, useEffect } from 'react';
+import { Icon, TickFrame, ScoreGauge, useLiveSeries } from '../primitives';
+import { CATEGORIES } from '../../data';
+import type { PCInfo, HistoryEntry } from '../../types';
+import { StatCard } from './StatCard';
+import { DriverBanner } from './DriverBanner';
+import { OneClickBar, type BulkProgress } from './OneClickBar';
 
-// ─────────────── STAT CARD (local) ───────────────
-interface StatCardProps {
-  label: string;
-  model: string;
-  value: number;
-  unit: string;
-  series: number[];
-  temp?: number;
-  sub: string;
-  range?: [number, number];
-  accent?: string;
-  meta?: string;
-}
-
-function StatCard({ label, model, value, unit, series, temp, sub, range = [0, 100], accent = 'var(--accent)', meta }: StatCardProps) {
-  return (
-    <TickFrame className="statcard" label={label} code={meta}>
-      <div className="statcard__head">
-        <div>
-          <div className="statcard__model mono">{model}</div>
-          <div className="statcard__sub mono">{sub}</div>
-        </div>
-        {temp != null && (
-          <div className="statcard__temp mono" data-hot={temp > 75 ? true : undefined}>
-            <Icon name="thermo" size={12} /> {temp}°C
-          </div>
-        )}
-      </div>
-      <div className="statcard__readout">
-        <div className="statcard__value mono">
-          <span className="statcard__num">{value}</span>
-          <span className="statcard__unit">{unit}</span>
-        </div>
-      </div>
-      <Sparkline data={series} color={accent} range={range} height={48} />
-      <div className="statcard__axis mono">
-        <span>{range[0]}{unit}</span>
-        <span>—</span>
-        <span>{range[1]}{unit}</span>
-      </div>
-    </TickFrame>
-  );
-}
-
-// ─────────────── DRIVER BANNER ───────────────
-interface DriverBannerProps {
-  pc: PCInfo;
-}
-
-function DriverBanner({ pc }: DriverBannerProps) {
-  if (!pc.gpu.driverUpdateAvailable) return null;
-  return (
-    <div className="driverbanner">
-      <div className="driverbanner__icon">
-        <Icon name="download" size={18} />
-      </div>
-      <div className="driverbanner__body">
-        <div className="driverbanner__title">
-          <span className="pulse-dot" />
-          Nova versão de driver disponível
-          <span className="driverbanner__vchip mono">{pc.gpu.driver} → {pc.gpu.latestDriver}</span>
-        </div>
-        <div className="driverbanner__sub">
-          A NVIDIA lançou o {pc.gpu.latestDriver} pra sua {pc.gpu.model}. Costuma melhorar FPS em jogos recentes.
-        </div>
-      </div>
-      <button className="btn btn--accent">
-        Atualizar agora <Icon name="external" size={14} />
-      </button>
-    </div>
-  );
-}
-
-// ─────────────── ONE-CLICK BAR ───────────────
-interface BulkProgress {
-  done: number;
-  total: number;
-  current: string;
-}
-
-interface OneClickBarProps {
-  onRun: (action: string) => void;
-  bulkRunning: string | null;
-  bulkProgress: BulkProgress | null;
-}
-
-function OneClickBar({ onRun, bulkRunning, bulkProgress }: OneClickBarProps) {
-  const boostActive = bulkRunning === 'boost';
-  const cleanActive = bulkRunning === 'clean';
-  const anyRunning = bulkRunning !== null;
-  const pct = bulkProgress ? Math.round((bulkProgress.done / bulkProgress.total) * 100) : 0;
-
-  return (
-    <div className="oneclick">
-      <button
-        className={`oneclick__card oneclick__card--boost ${boostActive ? 'is-running' : ''}`}
-        onClick={() => !anyRunning && onRun('boost')}
-        disabled={anyRunning}
-      >
-        <div className="oneclick__icon">
-          {boostActive ? <div className="spinner spinner--lg" /> : <Icon name="rocket" size={22} />}
-        </div>
-        <div className="oneclick__body">
-          <div className="oneclick__title">Boost Completo</div>
-          <div className="oneclick__sub">
-            {boostActive && bulkProgress
-              ? `${bulkProgress.done + 1} de ${bulkProgress.total} · ${bulkProgress.current}`
-              : boostActive
-                ? 'Aplicando otimizações…'
-                : 'Aplica todas as otimizações de gaming numa tacada só. Reversível.'}
-          </div>
-          {boostActive && bulkProgress && (
-            <div className="oneclick__progress">
-              <div className="oneclick__progress-bar" style={{ width: `${pct}%` }} />
-            </div>
-          )}
-        </div>
-        <div className="oneclick__cta mono">{boostActive ? `${pct}%` : 'EXECUTAR ↗'}</div>
-      </button>
-
-      <button
-        className={`oneclick__card oneclick__card--clean ${cleanActive ? 'is-running' : ''}`}
-        onClick={() => !anyRunning && onRun('clean')}
-        disabled={anyRunning}
-      >
-        <div className="oneclick__icon">
-          {cleanActive ? <div className="spinner spinner--lg" /> : <Icon name="trash" size={22} />}
-        </div>
-        <div className="oneclick__body">
-          <div className="oneclick__title">Limpeza Completa</div>
-          <div className="oneclick__sub">
-            {cleanActive && bulkProgress
-              ? `${bulkProgress.done + 1} de ${bulkProgress.total} · ${bulkProgress.current}`
-              : cleanActive
-                ? 'Limpando…'
-                : 'Faxina geral — temp, prefetch, cache, lixeira. Costuma liberar ~5 GB.'}
-          </div>
-          {cleanActive && bulkProgress && (
-            <div className="oneclick__progress">
-              <div className="oneclick__progress-bar" style={{ width: `${pct}%` }} />
-            </div>
-          )}
-        </div>
-        <div className="oneclick__cta mono">{cleanActive ? `${pct}%` : 'EXECUTAR ↗'}</div>
-      </button>
-    </div>
-  );
-}
-
-// ─────────────── HERO (dashboard) ───────────────
+// ─────────────── HERO ───────────────
 interface HeroProps {
   pc: PCInfo;
   pcLoading: boolean;
@@ -164,8 +24,8 @@ interface HeroProps {
   bulkProgress: BulkProgress | null;
 }
 
-export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulkRunning, bulkProgress }: HeroProps) {
-  // Live series
+export function Hero({ pc, pcLoading: _pcLoading, score, onNav, onRunOneClick, history, bulkRunning, bulkProgress }: HeroProps) {
+  // Live series for the 4 stat cards
   const cpuSeries = useLiveSeries(60, [15, 80], 900, 1);
   const gpuSeries = useLiveSeries(60, [10, 70], 1100, 2);
   const ramSeries = useLiveSeries(60, [40, 75], 1500, 3);
@@ -194,10 +54,10 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
       {/* 1. greeting + machine header */}
       <header className="hero__head">
         <div className="hero__greeting">
-          <div className="mono hero__eyebrow">— OLÁ, {pc.user.toUpperCase()}</div>
-          <h1 className="hero__title">Seu PC está <em>pronto pra acelerar</em>.</h1>
+          <div className="mono hero__eyebrow">— OLA, {pc.user.toUpperCase()}</div>
+          <h1 className="hero__title">Seu PC esta <em>pronto pra acelerar</em>.</h1>
           <p className="hero__lead">
-            Aqui é o painel da sua máquina. Tudo que tá rolando agora, e o que dá pra fazer pra melhorar.
+            Aqui e o painel da sua maquina. Tudo que ta rolando agora, e o que da pra fazer pra melhorar.
           </p>
         </div>
 
@@ -230,9 +90,9 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
             <ScoreGauge value={score} size={200} label="DE 100" />
             <div className="hero__score-side">
               <div className="hero__score-quip mono">
-                ▸ Acima da média.<br />
+                ▸ Acima da media.<br />
                 ▸ Ganhe +14 aplicando o Boost Completo.<br />
-                ▸ Última otimização: há 2 horas.
+                ▸ Ultima otimizacao: ha 2 horas.
               </div>
               <div className="hero__score-bars">
                 {[
@@ -265,7 +125,7 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
           <span className="mono sec__num">01</span>
           Em tempo real
         </h2>
-        <p className="sec__sub">O que sua máquina está fazendo agora mesmo. Atualiza sozinho.</p>
+        <p className="sec__sub">O que sua maquina esta fazendo agora mesmo. Atualiza sozinho.</p>
       </div>
 
       <div className="hero__stats">
@@ -277,7 +137,7 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
           series={cpuSeries} temp={Math.round(temps.cpu)}
         />
         <StatCard
-          label="PLACA DE VÍDEO · GPU" meta="02/04"
+          label="PLACA DE VIDEO · GPU" meta="02/04"
           model={pc.gpu.model}
           sub={`${pc.gpu.vram} GB VRAM · driver ${pc.gpu.driver}`}
           value={gpuNow} unit="%"
@@ -285,7 +145,7 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
           accent="var(--accent-2)"
         />
         <StatCard
-          label="MEMÓRIA · RAM" meta="03/04"
+          label="MEMORIA · RAM" meta="03/04"
           model={`${pc.ram.total} GB ${pc.ram.type}`}
           sub={`${pc.ram.speed} MHz · ${ramGB} / ${pc.ram.total} GB em uso`}
           value={ramNow} unit="%"
@@ -294,7 +154,7 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
         <StatCard
           label="REDE · NET" meta="04/04"
           model="Ethernet 1 Gbps"
-          sub="ping 12 ms · download estável"
+          sub="ping 12 ms · download estavel"
           value={netNow} unit="Mb/s"
           series={netSeries}
           range={[0, 100]}
@@ -308,7 +168,7 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
           <span className="mono sec__num">02</span>
           Armazenamento
         </h2>
-        <p className="sec__sub">Quanto espaço você tem, e quanto a gente pode liberar.</p>
+        <p className="sec__sub">Quanto espaco voce tem, e quanto a gente pode liberar.</p>
       </div>
 
       <TickFrame className="diskcard" label={`DISCO ${pc.disk.letter}:`} code={pc.disk.type}>
@@ -386,7 +246,7 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
             ))}
           </ul>
           <button className="recent__more" onClick={() => onNav('historico')}>
-            Ver histórico completo <Icon name="chevron" size={12} />
+            Ver historico completo <Icon name="chevron" size={12} />
           </button>
         </TickFrame>
       </div>
