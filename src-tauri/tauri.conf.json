@@ -1,0 +1,40 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicovrc/tauri-docs/refs/heads/dev/tooling/cli/schema.json",
+  "productName": "PCBoost",
+  "version": "1.0.0",
+  "identifier": "com.pcboost.app",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "title": "PCBoost",
+    "windows": [
+      {
+        "title": "PCBoost - Gaming Optimizer",
+        "width": 1100,
+        "height": 750,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "plugins": {
+    "shell": {
+      "open": true,
+      "scope": [
+        {
+          "name": "powershell",
+          "cmd": "powershell",
+          "args": true
+        }
+      ]
+    }
+  }
+}
