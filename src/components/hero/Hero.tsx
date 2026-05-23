@@ -6,7 +6,7 @@
  */
 import { useState, useEffect } from 'react';
 import { Icon, TickFrame, ScoreGauge, useLiveSeries } from '../primitives';
-import { CATEGORIES } from '../../data';
+import { CATEGORIES, OPTIMIZATIONS } from '../../data';
 import type { PCInfo, HistoryEntry } from '../../types';
 import { StatCard } from './StatCard';
 import { DriverBanner } from './DriverBanner';
@@ -22,9 +22,10 @@ interface HeroProps {
   history: HistoryEntry[];
   bulkRunning: string | null;
   bulkProgress: BulkProgress | null;
+  applied: Record<string, boolean>;
 }
 
-export function Hero({ pc, pcLoading: _pcLoading, score, onNav, onRunOneClick, history, bulkRunning, bulkProgress }: HeroProps) {
+export function Hero({ pc, pcLoading: _pcLoading, score, onNav, onRunOneClick, history, bulkRunning, bulkProgress, applied }: HeroProps) {
   // Live series for the 4 stat cards
   const cpuSeries = useLiveSeries(60, [15, 80], 900, 1);
   const gpuSeries = useLiveSeries(60, [10, 70], 1100, 2);
@@ -36,6 +37,40 @@ export function Hero({ pc, pcLoading: _pcLoading, score, onNav, onRunOneClick, h
   const ramNow = Math.round(ramSeries[ramSeries.length - 1]);
   const netNow = Math.round(netSeries[netSeries.length - 1]);
   const ramGB = ((ramNow / 100) * pc.ram.total).toFixed(1);
+
+  // ── Dynamic score breakdown bars ──
+  const gamingTotal = OPTIMIZATIONS.filter(o => o.category === 'gaming').length;
+  const gamingOn = OPTIMIZATIONS.filter(o => o.category === 'gaming' && applied[o.id]).length;
+  const limpezaTotal = OPTIMIZATIONS.filter(o => o.category === 'limpeza').length;
+  const limpezaOn = OPTIMIZATIONS.filter(o => o.category === 'limpeza' && applied[o.id]).length;
+  const tweaksTotal = OPTIMIZATIONS.filter(o => o.category === 'tweaks').length;
+  const tweaksOn = OPTIMIZATIONS.filter(o => o.category === 'tweaks' && applied[o.id]).length;
+
+  const gamingPct = gamingTotal ? Math.round((gamingOn / gamingTotal) * 100) : 0;
+  const limpezaPct = limpezaTotal ? Math.round((limpezaOn / limpezaTotal) * 100) : 0;
+  const tweaksPct = tweaksTotal ? Math.round((tweaksOn / tweaksTotal) * 100) : 0;
+  const driverPct = pc.gpu.driverUpdateAvailable ? 60 : 100;
+
+  // ── Dynamic score quip ──
+  const maxBoost = gamingTotal - gamingOn;
+  const possibleGain = Math.round(maxBoost * 1.2);
+  const lastAction = history.length > 0 ? history[0] : null;
+
+  function scoreQuip(): string {
+    if (score >= 90) return 'Sua maquina esta voando.';
+    if (score >= 80) return 'Muito acima da media.';
+    if (score >= 72) return 'Acima da media.';
+    return 'Ha espaco pra melhorar bastante.';
+  }
+
+  // ── Dynamic disk breakdown ──
+  const diskUsed = pc.disk.total - pc.disk.free;
+  const diskUsedPct = pc.disk.total ? Math.round((diskUsed / pc.disk.total) * 100) : 0;
+  // Estimate segments proportionally from used space
+  const tempPct = Math.max(1, Math.round(diskUsedPct * 0.06));  // ~6% of used is temp
+  const appPct = Math.max(1, Math.round(diskUsedPct * 0.15));
+  const sysPct = Math.max(1, Math.round(diskUsedPct * 0.35));
+  const restPct = Math.max(0, diskUsedPct - tempPct - appPct - sysPct);
 
   // CPU/GPU faux temps that wobble
   const [temps, setTemps] = useState({ cpu: 62, gpu: 58 });
@@ -90,16 +125,18 @@ export function Hero({ pc, pcLoading: _pcLoading, score, onNav, onRunOneClick, h
             <ScoreGauge value={score} size={200} label="DE 100" />
             <div className="hero__score-side">
               <div className="hero__score-quip mono">
-                ▸ Acima da media.<br />
-                ▸ Ganhe +14 aplicando o Boost Completo.<br />
-                ▸ Ultima otimizacao: ha 2 horas.
+                ▸ {scoreQuip()}<br />
+                {possibleGain > 0 && <>▸ Ganhe +{possibleGain} aplicando o Boost Completo.<br /></>}
+                {lastAction
+                  ? <>▸ Ultima acao: {lastAction.title}.</>
+                  : <>▸ Nenhuma otimizacao aplicada ainda.</>}
               </div>
               <div className="hero__score-bars">
                 {[
-                  { k: 'Gaming', v: 78 },
-                  { k: 'Limpeza', v: 94 },
-                  { k: 'Drivers', v: 70 },
-                  { k: 'Privacidade', v: 65 },
+                  { k: 'Gaming', v: gamingPct },
+                  { k: 'Limpeza', v: limpezaPct },
+                  { k: 'Drivers', v: driverPct },
+                  { k: 'Tweaks', v: tweaksPct },
                 ].map(b => (
                   <div key={b.k} className="scorebar">
                     <div className="scorebar__k mono">{b.k}</div>
@@ -153,8 +190,8 @@ export function Hero({ pc, pcLoading: _pcLoading, score, onNav, onRunOneClick, h
         />
         <StatCard
           label="REDE · NET" meta="04/04"
-          model="Ethernet 1 Gbps"
-          sub="ping 12 ms · download estavel"
+          model="Adaptador de rede"
+          sub="atividade de rede em tempo real"
           value={netNow} unit="Mb/s"
           series={netSeries}
           range={[0, 100]}
@@ -183,18 +220,18 @@ export function Hero({ pc, pcLoading: _pcLoading, score, onNav, onRunOneClick, h
         </div>
         <div className="diskcard__bar">
           {[
-            { k: 'Sistema', v: 18, c: 'var(--line-strong)' },
-            { k: 'Jogos', v: 32, c: 'var(--accent)' },
-            { k: 'Apps & docs', v: 8, c: 'var(--accent-2)' },
-            { k: 'Temp & cache', v: 4, c: 'var(--warning)' },
+            { k: 'Sistema', v: sysPct, c: 'var(--line-strong)' },
+            { k: 'Jogos & apps', v: restPct, c: 'var(--accent)' },
+            { k: 'Outros', v: appPct, c: 'var(--accent-2)' },
+            { k: 'Temp & cache', v: tempPct, c: 'var(--warning)' },
           ].map((s, i) => (
             <div key={i} className="diskcard__seg" style={{ width: `${s.v}%`, background: s.c }} title={`${s.k} · ${Math.round(s.v * pc.disk.total / 100)} GB`} />
           ))}
         </div>
         <div className="diskcard__legend mono">
           <span><i style={{ background: 'var(--line-strong)' }} /> Sistema</span>
-          <span><i style={{ background: 'var(--accent)' }} /> Jogos</span>
-          <span><i style={{ background: 'var(--accent-2)' }} /> Apps</span>
+          <span><i style={{ background: 'var(--accent)' }} /> Jogos & apps</span>
+          <span><i style={{ background: 'var(--accent-2)' }} /> Outros</span>
           <span><i style={{ background: 'var(--warning)' }} /> Temp & cache <strong>↑ pode limpar</strong></span>
         </div>
       </TickFrame>

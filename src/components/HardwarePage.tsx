@@ -7,6 +7,8 @@ interface HardwarePageProps {
 }
 
 export function HardwarePage({ pc, loading: _loading }: HardwarePageProps) {
+  const usedPct = pc.disk.total ? Math.round(((pc.disk.total - pc.disk.free) / pc.disk.total) * 100) : 0;
+
   const cards: Array<{ label: string; k: string; name: string; lines: string[]; highlight?: boolean }> = [
     {
       label: 'PROCESSADOR',
@@ -15,7 +17,6 @@ export function HardwarePage({ pc, loading: _loading }: HardwarePageProps) {
       lines: [
         `${pc.cpu.cores} núcleos físicos, ${pc.cpu.threads} threads`,
         `${pc.cpu.baseClock} GHz base · ${pc.cpu.boostClock} GHz boost`,
-        `Socket AM4 · 105 W TDP`,
       ],
     },
     {
@@ -23,8 +24,8 @@ export function HardwarePage({ pc, loading: _loading }: HardwarePageProps) {
       k: '02',
       name: pc.gpu.model,
       lines: [
-        `${pc.gpu.vram} GB GDDR6 VRAM`,
-        `Driver atual ${pc.gpu.driver} · NVIDIA Studio`,
+        `${pc.gpu.vram} GB VRAM`,
+        `Driver atual ${pc.gpu.driver}`,
         pc.gpu.driverUpdateAvailable ? `↑ Atualização disponível: ${pc.gpu.latestDriver}` : 'Driver atualizado',
       ],
       highlight: pc.gpu.driverUpdateAvailable,
@@ -34,29 +35,22 @@ export function HardwarePage({ pc, loading: _loading }: HardwarePageProps) {
       k: '03',
       name: `${pc.ram.total} GB ${pc.ram.type}`,
       lines: [
-        `${pc.ram.speed} MHz · CL16`,
-        `2 × 16 GB dual-channel`,
-        `XMP Profile 1 ativo`,
+        `${pc.ram.speed} MHz`,
       ],
     },
     {
       label: 'PLACA-MÃE',
       k: '04',
       name: pc.mobo,
-      lines: [
-        `Chipset AMD B550`,
-        `BIOS F16d · agosto/2025`,
-        `4 slots DIMM · 2 ocupados`,
-      ],
+      lines: [],
     },
     {
       label: 'ARMAZENAMENTO',
       k: '05',
       name: `${pc.disk.total} GB ${pc.disk.type}`,
       lines: [
-        `${pc.disk.free} GB livres em C:`,
-        `Leitura: 3500 MB/s · escrita: 3000 MB/s`,
-        `Saúde: 98% · 24°C`,
+        `${pc.disk.free} GB livres em ${pc.disk.letter}:`,
+        `${usedPct}% ocupado`,
       ],
     },
     {
@@ -65,7 +59,6 @@ export function HardwarePage({ pc, loading: _loading }: HardwarePageProps) {
       name: pc.os,
       lines: [
         pc.build,
-        `Boot time: ${pc.bootTime}`,
         `Uptime: ${pc.uptime}`,
       ],
     },

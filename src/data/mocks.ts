@@ -19,10 +19,5 @@ export const PC_INFO: PCInfo = {
   bootTime: '2.4s',
 };
 
-export const HISTORY: HistoryEntry[] = [
-  { id: 1, title: 'Boost Completo',          time: 'ha 2 horas',  delta: '+18% FPS estimado',  kind: 'boost' },
-  { id: 2, title: 'Limpar Cache de Shaders',  time: 'ha 5 horas',  delta: '420 MB liberados',   kind: 'limpeza' },
-  { id: 3, title: 'Aceleracao de Mouse',      time: 'ontem',       delta: 'desativada',         kind: 'tweak' },
-  { id: 4, title: 'Limpeza Completa',         time: 'ha 3 dias',   delta: '6.8 GB liberados',   kind: 'limpeza' },
-  { id: 5, title: 'GPU Scheduling',           time: 'ha 1 semana', delta: 'ativado',            kind: 'gaming' },
-];
+/** Empty by default — populated by real user actions. */
+export const HISTORY: HistoryEntry[] = [];

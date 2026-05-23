@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PCBoost — Compra Confirmada!</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .success {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 24px;
+    }
+    .success__card {
+      max-width: 480px;
+    }
+    .success__icon {
+      width: 72px; height: 72px;
+      background: var(--accent-bg);
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      color: var(--accent);
+    }
+    .success__title {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .success__sub {
+      color: var(--text-dim);
+      font-size: 16px;
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+    .success__steps {
+      text-align: left;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+    .success__steps h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--accent);
+    }
+    .success__steps ol {
+      list-style: none;
+      counter-reset: step;
+    }
+    .success__steps ol li {
+      counter-increment: step;
+      padding: 8px 0;
+      font-size: 14px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .success__steps ol li::before {
+      content: counter(step);
+      flex-shrink: 0;
+      width: 24px; height: 24px;
+      background: var(--accent-bg);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      font-family: var(--mono);
+    }
+    .success__email {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 16px;
+    }
+    .success__email a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="success">
+    <div class="success__card">
+      <div class="success__icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+
+      <h1 class="success__title">Compra confirmada!</h1>
+      <p class="success__sub">
+        Sua chave de ativacao foi enviada para o email usado no pagamento.
+        Verifique tambem a pasta de spam.
+      </p>
+
+      <div class="success__steps">
+        <h3>PROXIMOS PASSOS</h3>
+        <ol>
+          <li>Abra seu email e copie a chave de ativacao</li>
+          <li>Baixe e instale o PCBoost no seu PC</li>
+          <li>Abra o PCBoost e insira a chave</li>
+          <li>Aproveite seu PC otimizado!</li>
+        </ol>
+      </div>
+
+      <a href="/" class="btn btn--accent btn--lg" style="width:100%;justify-content:center">
+        Voltar para a pagina inicial
+      </a>
+
+      <p class="success__email">
+        Problemas? <a href="mailto:suporte@pcboost.com.br">suporte@pcboost.com.br</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

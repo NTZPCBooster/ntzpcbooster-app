@@ -10,6 +10,10 @@ export interface Optimization {
   script: string;
   undoScript?: string;
   runOnce?: boolean;
+  /** If set, on Win11 the toggle is locked and this message is shown instead. */
+  win11Note?: string;
+  /** If set, shown as checkboxes in the confirmation dialog. User picks which to apply. */
+  selectableList?: { label: string; value: string }[];
 }
 
 export interface CategoryInfo {

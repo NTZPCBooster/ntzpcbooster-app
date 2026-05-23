@@ -6,9 +6,13 @@ import { HardwarePage } from "./components/HardwarePage";
 import { HistoryPage } from "./components/HistoryPage";
 import { AppearancePanel } from "./components/AppearancePanel";
 import { ConfirmDialog } from "./components/ConfirmDialog";
+import { ActivationPage } from "./components/ActivationPage";
 import { Icon } from "./components/primitives";
 import { OPTIMIZATIONS, CATEGORIES, HISTORY } from "./data";
 import { usePCInfo } from "./hooks/usePCInfo";
+import { useDetectState } from "./hooks/useDetectState";
+import { getLicense, checkStoredLicense } from "./lib/license";
+import type { LicenseInfo } from "./lib/license";
 import { STORAGE_KEY } from "./constants";
 import type { PageId } from "./constants";
 import type { Optimization, HistoryEntry } from "./types";
@@ -28,7 +32,10 @@ function loadPersisted(): Partial<PersistedState> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return {};
-    return JSON.parse(raw);
+    const state = JSON.parse(raw);
+    // Migrate old "blue" accent to "green"
+    if (state.accent === 'blue') state.accent = 'green';
+    return state;
   } catch {
     return {};
   }
@@ -42,12 +49,33 @@ function savePersisted(state: PersistedState) {
 
 // ─────────────── APP ───────────────
 function App() {
+  // ── License gate ──
+  const [licensed, setLicensed] = useState<boolean | null>(null); // null = checking
+  const [_license, setLicense] = useState<LicenseInfo | null>(null);
+
+  useEffect(() => {
+    const stored = getLicense();
+    if (!stored) {
+      setLicensed(false);
+      return;
+    }
+    // Optimistic: show app immediately, revalidate in background
+    setLicensed(true);
+    setLicense(stored);
+    checkStoredLicense().then(valid => {
+      if (!valid) {
+        setLicensed(false);
+        setLicense(null);
+      }
+    });
+  }, []);
+
   // Load persisted state once
   const persisted = useRef(loadPersisted());
 
   const [current, setCurrent] = useState<PageId>("dashboard");
   const [theme, setTheme] = useState<"dark" | "light">(persisted.current.theme || "dark");
-  const [accent, setAccent] = useState<string>(persisted.current.accent || "blue");
+  const [accent, setAccent] = useState<string>(persisted.current.accent || "green");
   const [density, setDensity] = useState<string>(persisted.current.density || "cozy");
   const [grid, setGrid] = useState<boolean>(persisted.current.grid ?? true);
   const [showAppearance, setShowAppearance] = useState(false);
@@ -71,6 +99,33 @@ function App() {
   // Dynamic PC info (from usePCInfo hook)
   const { pcInfo, pcLoading } = usePCInfo();
 
+  // ── Helpers (defined before effects that reference them) ──
+  const showToast = useCallback((msg: string, kind = "ok") => {
+    setToast({ msg, kind, id: Date.now() });
+    setTimeout(() => setToast(null), 2400);
+  }, []);
+
+  // Detect real system state (which optimizations are already applied)
+  const { detected, detectLoading: _detectLoading, detectError } = useDetectState();
+  const detectionApplied = useRef(false);
+  useEffect(() => {
+    if (detected && !detectionApplied.current) {
+      detectionApplied.current = true;
+      // Detection is the ground truth for toggle-able items.
+      // Override localStorage values with real system state.
+      setApplied(prev => ({ ...prev, ...detected }));
+      const count = Object.keys(detected).length;
+      const onCount = Object.values(detected).filter(Boolean).length;
+      showToast(`Detecção: ${onCount}/${count} otimizações ativas`);
+    }
+  }, [detected, showToast]);
+  // Show error toast if detection failed
+  useEffect(() => {
+    if (detectError && detectError !== 'no-tauri') {
+      showToast(`Erro na detecção: ${detectError.slice(0, 80)}`, 'error');
+    }
+  }, [detectError, showToast]);
+
   // Persist state on change
   useEffect(() => {
     savePersisted({ theme, accent, density, grid, applied, history, lastRan });
@@ -82,17 +137,12 @@ function App() {
     root.setAttribute("data-theme", theme);
     root.setAttribute("data-grid", grid ? "on" : "off");
     root.setAttribute("data-density", density);
-    if (accent === "blue") {
+    if (accent === "green") {
       root.removeAttribute("data-accent");
     } else {
       root.setAttribute("data-accent", accent);
     }
   }, [theme, accent, density, grid]);
-
-  const showToast = useCallback((msg: string, kind = "ok") => {
-    setToast({ msg, kind, id: Date.now() });
-    setTimeout(() => setToast(null), 2400);
-  }, []);
 
   const addHistory = useCallback((title: string, delta: string, kind: string) => {
     setHistory((prev) => [
@@ -101,6 +151,19 @@ function App() {
     ]);
   }, []);
 
+  // ── PowerShell Base64 encoder (UTF-16LE → Base64 for -EncodedCommand) ──
+  // Avoids ALL argument-escaping issues between Tauri → Windows → PowerShell.
+  function encodePS(script: string): string {
+    const buf = new Uint8Array(script.length * 2);
+    for (let i = 0; i < script.length; i++) {
+      buf[i * 2] = script.charCodeAt(i) & 0xFF;
+      buf[i * 2 + 1] = (script.charCodeAt(i) >> 8) & 0xFF;
+    }
+    let bin = "";
+    for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+    return btoa(bin);
+  }
+
   // Execute a PowerShell script via Tauri
   const executeScript = useCallback(async (opt: Optimization, undo = false) => {
     const script = undo ? opt.undoScript : opt.script;
@@ -108,20 +171,40 @@ function App() {
 
     if ((window as any).__TAURI_INTERNALS__) {
       const { Command } = await import("@tauri-apps/plugin-shell");
-      const cmd = opt.admin
-        ? Command.create("powershell", [
-            "-Command",
-            `Start-Process powershell -ArgumentList '-NoProfile -ExecutionPolicy Bypass -Command "${script}"' -Verb RunAs -Wait`,
-          ])
-        : Command.create("powershell", [
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-Command",
-            script,
-          ]);
+      // Force UTF-8 output so Tauri (Rust) can decode stdout/stderr correctly.
+      // Without this, Portuguese characters like ç/ã in "operação concluída"
+      // cause "invalid utf-8 sequence" errors because Windows uses CP-1252.
+      const utf8Script = `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\n${script}`;
+      const encoded = encodePS(utf8Script);
+
+      let cmd;
+      if (opt.admin) {
+        // Admin scripts: Start-Process with RunAs for UAC elevation.
+        cmd = Command.create("powershell", [
+          "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
+          `Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-EncodedCommand','${encoded}' -Verb RunAs -Wait`,
+        ]);
+      } else {
+        // Non-admin scripts: run directly via EncodedCommand.
+        // The app manifest (build.rs) sets requestedExecutionLevel = asInvoker
+        // which disables UAC registry virtualization for this process.
+        cmd = Command.create("powershell", [
+          "-NoProfile", "-ExecutionPolicy", "Bypass",
+          "-EncodedCommand", encoded,
+        ]);
+      }
+
       const output = await cmd.execute();
-      if (output.code !== 0) throw new Error(output.stderr);
+      console.log(`[PCBoost] ${opt.title} → code=${output.code} stdout=${output.stdout?.slice(0, 200)} stderr=${output.stderr?.slice(0, 200)}`);
+      // Some commands (e.g. Clear-RecycleBin) write to stderr or return
+      // non-zero even on success. Only throw when stderr contains a real
+      // error *and* exit code is non-zero.
+      const stderr = (output.stderr || "").trim();
+      const isFalsePositive =
+        !stderr ||
+        stderr.includes("SilentlyContinue") ||
+        stderr.includes("RecycleBin");
+      if (output.code !== 0 && !isFalsePositive) throw new Error(stderr);
     } else {
       console.log(`[DEV] ${undo ? "Desfazendo" : "Executando"}: ${opt.title}`);
       console.log(`[DEV] Script: ${script}`);
@@ -140,8 +223,9 @@ function App() {
         setApplied((prev) => ({ ...prev, [id]: val }));
         showToast(`${val ? "Aplicado" : "Desfeito"}: ${item.title}`);
         addHistory(item.title, val ? "ativado" : "desativado", item.category);
-      } catch {
-        showToast(`Erro ao ${val ? "aplicar" : "desfazer"}: ${item.title}`, "error");
+      } catch (err) {
+        const detail = err instanceof Error ? err.message : String(err);
+        showToast(`Erro: ${item.title} — ${detail.slice(0, 120)}`, "error");
       } finally {
         setRunning((prev) => {
           const next = new Set(prev);
@@ -164,8 +248,9 @@ function App() {
         setLastRan((prev) => ({ ...prev, [id]: new Date().toISOString() }));
         showToast(`Executado: ${item.title}`);
         addHistory(item.title, "executado", item.category);
-      } catch {
-        showToast(`Erro ao executar: ${item.title}`, "error");
+      } catch (err) {
+        const detail = err instanceof Error ? err.message : String(err);
+        showToast(`Erro: ${item.title} — ${detail.slice(0, 120)}`, "error");
       } finally {
         setRunning((prev) => {
           const next = new Set(prev);
@@ -204,16 +289,38 @@ function App() {
     [doApply]
   );
 
-  const confirmPending = useCallback(() => {
+  const confirmPending = useCallback(async (selectedValues?: string[]) => {
     if (!pendingConfirm) return;
     const { item, action, value } = pendingConfirm;
     setPendingConfirm(null);
+
+    // If selectableList was shown, build a custom script from user selection
+    if (selectedValues && item.selectableList) {
+      const appsList = selectedValues.map(v => `'${v}'`).join(',');
+      const customScript = `$apps = @(${appsList}); foreach ($a in $apps) { Get-AppxPackage -Name $a -AllUsers -ErrorAction SilentlyContinue | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue }`;
+      const customItem = { ...item, script: customScript };
+      setRunning(prev => new Set(prev).add(item.id));
+      try {
+        await executeScript(customItem);
+        setApplied(prev => ({ ...prev, [item.id]: true }));
+        setLastRan(prev => ({ ...prev, [item.id]: new Date().toISOString() }));
+        showToast(`Executado: ${item.title} (${selectedValues.length} apps)`);
+        addHistory(item.title, `${selectedValues.length} apps removidos`, item.category);
+      } catch (err) {
+        const detail = err instanceof Error ? err.message : String(err);
+        showToast(`Erro: ${item.title} — ${detail.slice(0, 120)}`, "error");
+      } finally {
+        setRunning(prev => { const next = new Set(prev); next.delete(item.id); return next; });
+      }
+      return;
+    }
+
     if (action === "toggle") {
       doToggle(item.id, value!);
     } else {
       doApply(item.id);
     }
-  }, [pendingConfirm, doToggle, doApply]);
+  }, [pendingConfirm, doToggle, doApply, executeScript, showToast, addHistory]);
 
   // ── One-click bulk with progress ──
   const runOneClick = useCallback(
@@ -277,6 +384,59 @@ function App() {
     [applied, executeScript, showToast, addHistory]
   );
 
+  // ── Bulk toggle for category (enable all / disable all) ──
+  const handleBulkToggle = useCallback(
+    async (category: string, enable: boolean) => {
+      const opts = OPTIMIZATIONS.filter(
+        (o) => o.category === category && !o.runOnce
+      );
+      const targets = enable
+        ? opts.filter((o) => !applied[o.id])   // only activate those that are off
+        : opts.filter((o) => applied[o.id]);    // only deactivate those that are on
+
+      if (targets.length === 0) return;
+
+      setBulkRunning(category);
+      const succeeded: string[] = [];
+
+      for (let i = 0; i < targets.length; i++) {
+        const opt = targets[i];
+        setBulkProgress({ done: i, total: targets.length, current: opt.title });
+        setRunning((prev) => new Set(prev).add(opt.id));
+
+        try {
+          // enable=true  → undo=false → runs opt.script
+          // enable=false → undo=true  → runs opt.undoScript
+          await executeScript(opt, !enable);
+          succeeded.push(opt.id);
+          // Update applied state immediately per item so UI reflects progress
+          setApplied((prev) => ({ ...prev, [opt.id]: enable }));
+        } catch (err) {
+          const detail = err instanceof Error ? err.message : String(err);
+          console.warn(`[BulkToggle] Erro em ${opt.title}: ${detail}`);
+          /* continue on error */
+        }
+
+        setRunning((prev) => {
+          const next = new Set(prev);
+          next.delete(opt.id);
+          return next;
+        });
+      }
+
+      const action = enable ? "ativadas" : "desativadas";
+      showToast(`${succeeded.length}/${targets.length} otimizações ${action}`);
+      addHistory(
+        `${enable ? 'Ativar' : 'Desativar'} todos — ${category}`,
+        `${succeeded.length} itens ${action}`,
+        category,
+      );
+      setBulkRunning(null);
+      setBulkProgress(null);
+    },
+    [applied, executeScript, showToast, addHistory]
+  );
+
   // Performance score based on applied optimizations
   const score = useMemo(() => {
     let base = 72;
@@ -288,6 +448,8 @@ function App() {
     ).length;
     return Math.min(100, Math.round(base + gamingOn * 1.2 + tweaksOn * 0.6));
   }, [applied]);
+
+  const isWin11 = pcInfo.os.toLowerCase().includes('11');
 
   function renderMain() {
     switch (current) {
@@ -302,6 +464,7 @@ function App() {
             history={history}
             bulkRunning={bulkRunning}
             bulkProgress={bulkProgress}
+            applied={applied}
           />
         );
       case "gaming":
@@ -315,7 +478,10 @@ function App() {
             applied={applied}
             onToggle={toggle}
             onApply={apply}
+            onBulkToggle={(enable) => handleBulkToggle("gaming", enable)}
             running={running}
+            bulkRunning={bulkRunning === "gaming"}
+            isWin11={isWin11}
           />
         );
       case "limpeza":
@@ -329,7 +495,9 @@ function App() {
             applied={applied}
             onToggle={toggle}
             onApply={apply}
+            onBulkToggle={(enable) => handleBulkToggle("limpeza", enable)}
             running={running}
+            bulkRunning={bulkRunning === "limpeza"}
             lastRan={lastRan}
           />
         );
@@ -344,7 +512,10 @@ function App() {
             applied={applied}
             onToggle={toggle}
             onApply={apply}
+            onBulkToggle={(enable) => handleBulkToggle("tweaks", enable)}
             running={running}
+            bulkRunning={bulkRunning === "tweaks"}
+            isWin11={isWin11}
           />
         );
       case "hardware":
@@ -358,6 +529,27 @@ function App() {
 
   const currentLabel =
     CATEGORIES.find((c) => c.id === current)?.label || "Painel";
+
+  // ── License gate render ──
+  if (licensed === null) {
+    return (
+      <div className="activation">
+        <div className="activation__bg" />
+        <div className="activation__loading mono">Verificando licenca...</div>
+      </div>
+    );
+  }
+
+  if (!licensed) {
+    return (
+      <ActivationPage
+        onActivated={(lic) => {
+          setLicense(lic);
+          setLicensed(true);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="shell">
@@ -422,6 +614,7 @@ function App() {
         title={pendingConfirm?.item.title || ""}
         description={pendingConfirm?.item.long || ""}
         risk={pendingConfirm?.item.risk || "medio"}
+        selectableList={pendingConfirm?.item.selectableList}
         onConfirm={confirmPending}
         onCancel={() => setPendingConfirm(null)}
       />

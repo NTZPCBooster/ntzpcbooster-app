@@ -24,10 +24,12 @@ interface OptimizationRowProps {
   onToggleExpand: () => void;
   isRunning: boolean;
   lastRanAt?: string;
+  isWin11?: boolean;
 }
 
-function OptimizationRow({ item, applied, onToggle, onApply, expanded, onToggleExpand, isRunning, lastRanAt }: OptimizationRowProps) {
+function OptimizationRow({ item, applied, onToggle, onApply, expanded, onToggleExpand, isRunning, lastRanAt, isWin11 }: OptimizationRowProps) {
   const isToggle = !item.runOnce;
+  const isLocked = !!(isWin11 && item.win11Note);
   return (
     <li className={`optrow ${expanded ? 'is-open' : ''} ${applied ? 'is-applied' : ''} ${isRunning ? 'is-running' : ''}`}>
       <button className="optrow__main" onClick={onToggleExpand}>
@@ -46,7 +48,12 @@ function OptimizationRow({ item, applied, onToggle, onApply, expanded, onToggleE
           {expanded ? '−' : '+'}
         </div>
         <div className="optrow__action" onClick={(e) => e.stopPropagation()}>
-          {isRunning ? (
+          {isLocked ? (
+            <div className="optrow__switch">
+              <span className="mono switch-label" style={{ opacity: 0.4 }}>N/A</span>
+              <Switch on={false} onChange={() => {}} disabled />
+            </div>
+          ) : isRunning ? (
             <div className="optrow__spinner">
               <div className="spinner" />
               <span className="mono spinner-label">...</span>
@@ -76,14 +83,20 @@ function OptimizationRow({ item, applied, onToggle, onApply, expanded, onToggleE
             <Icon name="info" size={14} />
             <p>{item.long}</p>
           </div>
-          <div className="optrow__detail-meta mono">
-            {item.admin && <span>↳ Requer privilégios de administrador</span>}
-            {isToggle ? (
-              <span>↳ Reversível a qualquer momento — basta desligar.</span>
-            ) : (
-              <span>↳ Ação única, não há "desfazer".</span>
-            )}
-          </div>
+          {isLocked ? (
+            <div className="optrow__detail-meta optrow__detail-meta--warn mono">
+              <span>⚠ {item.win11Note}</span>
+            </div>
+          ) : (
+            <div className="optrow__detail-meta mono">
+              {item.admin && <span>↳ Requer privilégios de administrador</span>}
+              {isToggle ? (
+                <span>↳ Reversível a qualquer momento — basta desligar.</span>
+              ) : (
+                <span>↳ Ação única, não há "desfazer".</span>
+              )}
+            </div>
+          )}
         </div>
       )}
     </li>
@@ -97,14 +110,17 @@ interface OptListProps {
   applied: Record<string, boolean>;
   onToggle: (id: string, value: boolean) => void;
   onApply: (id: string) => void;
+  onBulkToggle?: (enable: boolean) => void;
   title: string;
   subtitle: string;
   code: string;
   running: Set<string>;
+  bulkRunning?: boolean;
   lastRan?: Record<string, string>;
+  isWin11?: boolean;
 }
 
-export function OptList({ items, applied, onToggle, onApply, title, subtitle, code, running, lastRan }: OptListProps) {
+export function OptList({ items, applied, onToggle, onApply, onBulkToggle, title, subtitle, code, running, bulkRunning, lastRan, isWin11 }: OptListProps) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
@@ -117,7 +133,12 @@ export function OptList({ items, applied, onToggle, onApply, title, subtitle, co
     return true;
   }), [items, filter, search, applied]);
 
+  const toggleableItems = useMemo(() => items.filter(it => !it.runOnce), [items]);
   const onCount = Object.keys(applied).filter(k => applied[k] && items.find(i => i.id === k)).length;
+  const toggleableOnCount = toggleableItems.filter(it => applied[it.id]).length;
+  const allOn = toggleableOnCount === toggleableItems.length && toggleableItems.length > 0;
+  const allOff = toggleableOnCount === 0;
+  const isBusy = bulkRunning || running.size > 0;
 
   return (
     <section className="optlist-page">
@@ -138,6 +159,27 @@ export function OptList({ items, applied, onToggle, onApply, title, subtitle, co
           </div>
         </div>
       </header>
+
+      {onBulkToggle && toggleableItems.length > 0 && (
+        <div className="optlist-page__bulk">
+          <button
+            className="btn btn--ghost btn--small"
+            disabled={allOn || !!isBusy}
+            onClick={() => onBulkToggle(true)}
+          >
+            <Icon name="check" size={13} />
+            Ativar todos ({toggleableItems.length - toggleableOnCount})
+          </button>
+          <button
+            className="btn btn--ghost btn--small"
+            disabled={allOff || !!isBusy}
+            onClick={() => onBulkToggle(false)}
+          >
+            <Icon name="x" size={13} />
+            Desativar todos ({toggleableOnCount})
+          </button>
+        </div>
+      )}
 
       <div className="optlist-page__toolbar">
         <div className="search">
@@ -175,6 +217,7 @@ export function OptList({ items, applied, onToggle, onApply, title, subtitle, co
             onToggleExpand={() => setExpanded(expanded === it.id ? null : it.id)}
             isRunning={running.has(it.id)}
             lastRanAt={lastRan?.[it.id]}
+            isWin11={isWin11}
           />
         ))}
       </ul>

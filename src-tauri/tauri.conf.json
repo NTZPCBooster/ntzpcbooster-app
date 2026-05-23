@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicovrc/tauri-docs/refs/heads/dev/tooling/cli/schema.json",
-  "productName": "PCBoost",
+  "productName": "NTZ PCBooster",
   "version": "1.0.0",
-  "identifier": "com.pcboost.desktop",
+  "identifier": "com.ntz.pcbooster",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "PCBoost - Gaming Optimizer",
+        "title": "NTZ PCBooster",
         "width": 1100,
         "height": 750,
         "resizable": true,
@@ -23,6 +23,17 @@
     "security": {
       "csp": null
     }
+  },
+  "bundle": {
+    "icon": [
+      "icons/32x32.png",
+      "icons/64x64.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico",
+      "icons/icon.png"
+    ]
   },
   "plugins": {
     "shell": {

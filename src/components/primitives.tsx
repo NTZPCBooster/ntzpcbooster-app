@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ICONS } from '../icons';
+import { GearSix } from '@phosphor-icons/react';
 
 // ─────────────── LOGO ───────────────
 interface LogoProps {
@@ -8,27 +9,15 @@ interface LogoProps {
   mark?: string;
 }
 
-export function Logo({ size = 36, accent = 'var(--accent)', mark = 'var(--ink)' }: LogoProps) {
-  const s = size;
-  const r = 4;
-  const inset = 8;
+export function Logo({ size = 36 }: LogoProps) {
   return (
-    <svg width={s} height={s} viewBox="0 0 40 40" fill="none" aria-label="PCBooster">
-      <g stroke={mark} strokeWidth="1.5" strokeLinecap="square">
-        <path d={`M0 ${r} L0 0 L${r} 0`} />
-        <path d={`M${40 - r} 0 L40 0 L40 ${r}`} />
-        <path d={`M40 ${40 - r} L40 40 L${40 - r} 40`} />
-        <path d={`M${r} 40 L0 40 L0 ${40 - r}`} />
-      </g>
-      <rect x={inset} y={inset} width={40 - inset * 2} height={40 - inset * 2} stroke={mark} strokeWidth="1.25" fill="none" opacity="0.35" />
-      <g fill={accent}>
-        <rect x="12.5" y="22" width="3" height="6" />
-        <rect x="18.5" y="18" width="3" height="10" />
-        <rect x="24.5" y="14" width="3" height="14" />
-      </g>
-      <path d="M11 27 L29 12" stroke={accent} strokeWidth="1.25" opacity="0.5" strokeDasharray="2 2" />
-      <circle cx="29" cy="12" r="1.5" fill={accent} />
-    </svg>
+    <img
+      src="/logo.png"
+      alt="NTZ PCBooster"
+      width={size}
+      height={size}
+      style={{ borderRadius: 6, objectFit: 'contain' }}
+    />
   );
 }
 
@@ -38,27 +27,20 @@ interface IconProps {
   name: string;
   size?: number;
   strokeWidth?: number;
+  weight?: 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
   className?: string;
   style?: React.CSSProperties;
 }
 
-export function Icon({ name, size = 16, strokeWidth = 1.5, className = '', style = {} }: IconProps) {
-  const d = ICONS[name] || ICONS.cog;
+export function Icon({ name, size = 16, weight = 'regular', className = '', style = {} }: IconProps) {
+  const PhIcon = ICONS[name] || GearSix;
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <PhIcon
+      size={size}
+      weight={weight}
       className={`icon ${className}`}
       style={style}
-    >
-      <path d={d} />
-    </svg>
+    />
   );
 }
 

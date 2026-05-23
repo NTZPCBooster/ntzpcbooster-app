@@ -14,8 +14,8 @@ interface AppearancePanelProps {
 }
 
 const ACCENTS = [
-  { id: 'blue', color: '#4f8df5', colorLight: '#1d4ed8' },
-  { id: 'cyan', color: '#06b6d4', colorLight: '#0891b2' },
+  { id: 'green', color: '#00ff41', colorLight: '#15803d' },
+  { id: 'cyan',  color: '#06b6d4', colorLight: '#0891b2' },
   { id: 'amber', color: '#f59e0b', colorLight: '#b45309' },
 ];
 
