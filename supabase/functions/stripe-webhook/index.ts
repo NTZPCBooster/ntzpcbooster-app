@@ -5,11 +5,12 @@
  * 1. Generates a license key
  * 2. Creates the license record
  * 3. Creates the payment record (with affiliate commission if coupon used)
- * 4. TODO: Send email with key via Resend/Supabase
+ * 4. Sends email with key + download link via Resend
  *
  * Required secrets:
  *   STRIPE_WEBHOOK_SECRET — from Stripe dashboard
  *   STRIPE_SECRET_KEY     — sk_live_... or sk_test_...
+ *   RESEND_API_KEY        — re_... from resend.com
  *
  * Stripe Checkout metadata expected:
  *   plan: 'vitalicio' | 'mensal'
@@ -137,25 +138,74 @@ serve(async (req: Request) => {
       console.error('Failed to create payment:', payError);
     }
 
-    // TODO: Send email with license key
-    // You can use Resend, SendGrid, or Supabase's built-in email
-    // Example with Resend:
-    // await fetch('https://api.resend.com/emails', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     from: 'PCBoost <noreply@pcboost.com.br>',
-    //     to: buyerEmail,
-    //     subject: 'Sua chave PCBoost',
-    //     html: `<h1>Obrigado pela compra!</h1>
-    //            <p>Sua chave de ativacao:</p>
-    //            <h2 style="font-family:monospace;letter-spacing:2px">${licenseKey}</h2>
-    //            <p>Abra o PCBoost e insira essa chave para ativar.</p>`,
-    //   }),
-    // });
+    // ── Send license key + download link via Resend ──
+    if (buyerEmail) {
+      try {
+        const planLabel = plan === 'vitalicio' ? 'Vitalicio' : 'Mensal';
+        const downloadUrl = 'https://github.com/NTZPCBooster/ntzpcbooster-app/releases/latest/download/NTZ-PCBooster-Setup.exe';
+
+        const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"/></head>
+<body style="margin:0;padding:0;background:#0a0a0a;font-family:'Segoe UI',Arial,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;padding:40px 24px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <h1 style="color:#00ff41;font-size:22px;margin:0;letter-spacing:1px;">NTZ PCBOOSTER</h1>
+      <p style="color:#666;font-size:13px;margin:6px 0 0;">Otimizacao de PC para jogos</p>
+    </div>
+    <div style="background:#111;border:1px solid #1a1a1a;border-radius:12px;padding:32px;text-align:center;">
+      <h2 style="color:#fff;font-size:20px;margin:0 0 8px;">Compra confirmada!</h2>
+      <p style="color:#888;font-size:14px;margin:0 0 28px;">Obrigado pela sua compra. Aqui esta sua chave de ativacao:</p>
+      <div style="background:#0a0a0a;border:2px solid #00ff41;border-radius:8px;padding:18px 24px;margin:0 0 24px;">
+        <span style="color:#00ff41;font-family:'Courier New',monospace;font-size:22px;font-weight:bold;letter-spacing:3px;">${licenseKey}</span>
+      </div>
+      <p style="color:#666;font-size:12px;margin:0 0 28px;">Plano: <strong style="color:#fff;">${planLabel}</strong></p>
+      <div style="margin:0 0 24px;">
+        <a href="${downloadUrl}" style="display:inline-block;background:#00ff41;color:#000;font-weight:700;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;">
+          Baixar NTZ PCBooster
+        </a>
+      </div>
+      <div style="text-align:left;background:#0d0d0d;border-radius:8px;padding:20px 24px;margin-bottom:4px;">
+        <p style="color:#fff;font-size:14px;font-weight:600;margin:0 0 14px;">Como ativar:</p>
+        <p style="color:#aaa;font-size:13px;margin:0 0 10px;"><span style="color:#00ff41;font-weight:bold;">1.</span> Baixe e instale o NTZ PCBooster</p>
+        <p style="color:#aaa;font-size:13px;margin:0 0 10px;"><span style="color:#00ff41;font-weight:bold;">2.</span> Abra o app e clique em "Ativar licenca"</p>
+        <p style="color:#aaa;font-size:13px;margin:0;"><span style="color:#00ff41;font-weight:bold;">3.</span> Cole a chave acima e pronto!</p>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:28px;">
+      <p style="color:#444;font-size:12px;margin:0;">Duvidas? Fale com a gente: <a href="mailto:suporte@ntzpcbooster.com" style="color:#00ff41;text-decoration:none;">suporte@ntzpcbooster.com</a></p>
+      <p style="color:#333;font-size:11px;margin:12px 0 0;">&copy; 2026 NTZ PCBooster. Todos os direitos reservados.</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+        const emailRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'NTZ PCBooster <noreply@ntzpcbooster.com>',
+            to: buyerEmail,
+            subject: `Sua chave NTZ PCBooster — Plano ${planLabel}`,
+            html: emailHtml,
+          }),
+        });
+
+        if (!emailRes.ok) {
+          const errBody = await emailRes.text();
+          console.error('Resend email failed:', emailRes.status, errBody);
+        } else {
+          console.log(`License email sent to ${buyerEmail}`);
+        }
+      } catch (emailErr) {
+        // Don't fail the webhook if email fails — license is already created
+        console.error('Email sending error:', emailErr);
+      }
+    }
 
     console.log(`License created: ${licenseKey} for ${buyerEmail} (plan: ${plan})`);
   }

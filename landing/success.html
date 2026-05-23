@@ -3,127 +3,181 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PCBoost — Compra Confirmada!</title>
+  <title>Compra confirmada — NTZ PCBooster</title>
+  <meta name="theme-color" content="#0a0a0a" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+  <!-- Phosphor Icons -->
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+
   <link rel="stylesheet" href="style.css" />
+
   <style>
     .success {
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      text-align: center;
+      position: relative;
+      z-index: 1;
       padding: 40px 24px;
     }
     .success__card {
-      max-width: 480px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px 40px;
+      max-width: 560px;
+      width: 100%;
+      text-align: center;
+      backdrop-filter: blur(8px);
     }
     .success__icon {
-      width: 72px; height: 72px;
-      background: var(--accent-bg);
-      border: 2px solid var(--accent);
+      width: 72px;
+      height: 72px;
       border-radius: 50%;
+      background: rgba(0,255,65,0.1);
+      border: 2px solid var(--accent);
       display: flex;
       align-items: center;
       justify-content: center;
       margin: 0 auto 24px;
+      font-size: 32px;
       color: var(--accent);
     }
     .success__title {
       font-size: 28px;
-      font-weight: 800;
-      margin-bottom: 12px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
     }
     .success__sub {
       color: var(--text-dim);
-      font-size: 16px;
-      line-height: 1.7;
+      font-size: 15px;
       margin-bottom: 32px;
+      line-height: 1.6;
     }
     .success__steps {
-      text-align: left;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+      background: var(--bg);
+      border-radius: var(--radius-sm);
       padding: 24px;
+      text-align: left;
       margin-bottom: 32px;
     }
     .success__steps h3 {
       font-size: 14px;
       font-weight: 700;
-      margin-bottom: 16px;
       color: var(--accent);
+      margin-bottom: 16px;
+      font-family: var(--mono);
     }
-    .success__steps ol {
-      list-style: none;
-      counter-reset: step;
-    }
-    .success__steps ol li {
-      counter-increment: step;
-      padding: 8px 0;
-      font-size: 14px;
-      color: var(--text-dim);
+    .success__step {
       display: flex;
       align-items: flex-start;
       gap: 12px;
+      margin-bottom: 14px;
+      font-size: 14px;
+      color: var(--text-dim);
     }
-    .success__steps ol li::before {
-      content: counter(step);
-      flex-shrink: 0;
-      width: 24px; height: 24px;
-      background: var(--accent-bg);
+    .success__step:last-child { margin-bottom: 0; }
+    .success__step-num {
+      background: var(--accent);
+      color: #000;
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 12px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--accent);
-      font-family: var(--mono);
+      flex-shrink: 0;
     }
-    .success__email {
+    .success__download { margin-bottom: 16px; }
+    .success__note {
       font-size: 13px;
       color: var(--text-muted);
-      margin-top: 16px;
+      line-height: 1.6;
     }
-    .success__email a { color: var(--accent); text-decoration: none; }
+    .success__note a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
-  <div class="success">
+  <!-- Particles Background -->
+  <div id="particles-js"></div>
+
+  <!-- Nav -->
+  <nav class="nav">
+    <div class="container nav__inner">
+      <a href="/" class="nav__brand">
+        <i class="ph ph-gauge nav__logo"></i>
+        <span>NTZ PCBOOSTER</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Success -->
+  <section class="success">
     <div class="success__card">
       <div class="success__icon">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="20 6 9 17 4 12"/>
-        </svg>
+        <i class="ph ph-check-circle"></i>
       </div>
 
       <h1 class="success__title">Compra confirmada!</h1>
       <p class="success__sub">
-        Sua chave de ativacao foi enviada para o email usado no pagamento.
-        Verifique tambem a pasta de spam.
+        Sua chave de ativacao foi enviada para o email usado na compra.
+        <br />Verifique sua caixa de entrada (e o spam).
       </p>
 
       <div class="success__steps">
         <h3>PROXIMOS PASSOS</h3>
-        <ol>
-          <li>Abra seu email e copie a chave de ativacao</li>
-          <li>Baixe e instale o PCBoost no seu PC</li>
-          <li>Abra o PCBoost e insira a chave</li>
-          <li>Aproveite seu PC otimizado!</li>
-        </ol>
+        <div class="success__step">
+          <span class="success__step-num">1</span>
+          <span>Baixe o NTZ PCBooster clicando no botao abaixo</span>
+        </div>
+        <div class="success__step">
+          <span class="success__step-num">2</span>
+          <span>Abra o instalador e siga as instrucoes de instalacao</span>
+        </div>
+        <div class="success__step">
+          <span class="success__step-num">3</span>
+          <span>No app, clique em "Ativar licenca" e cole a chave que voce recebeu por email</span>
+        </div>
+        <div class="success__step">
+          <span class="success__step-num">4</span>
+          <span>Aproveite seu PC otimizado!</span>
+        </div>
       </div>
 
-      <a href="/" class="btn btn--accent btn--lg" style="width:100%;justify-content:center">
-        Voltar para a pagina inicial
-      </a>
+      <div class="success__download">
+        <a id="downloadBtn"
+           href="https://github.com/NTZPCBooster/ntzpcbooster-app/releases/latest/download/NTZ-PCBooster-Setup.exe"
+           class="btn btn--accent btn--lg" style="width:100%;justify-content:center;">
+          <i class="ph ph-download-simple"></i>
+          Baixar NTZ PCBooster
+        </a>
+      </div>
 
-      <p class="success__email">
-        Problemas? <a href="mailto:suporte@pcboost.com.br">suporte@pcboost.com.br</a>
+      <p class="success__note">
+        <i class="ph ph-info"></i>
+        Compativel com Windows 10 e 11. Sua licenca esta vinculada a sua placa-mae — reinstale quantas vezes quiser.
+        <br /><br />
+        <i class="ph ph-shield-check"></i>
+        <strong style="color:var(--text-dim);">Nota:</strong> O Windows pode exibir um aviso de "app desconhecido" ao abrir o instalador. Clique em <strong style="color:#fff;">"Mais informacoes"</strong> e depois <strong style="color:#fff;">"Executar assim mesmo"</strong>. Isso e normal para apps novos.
+        <br /><br />
+        Duvidas? <a href="mailto:suporte@ntzpcbooster.com">suporte@ntzpcbooster.com</a>
       </p>
     </div>
-  </div>
+  </section>
+
+  <!-- particles.js -->
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
