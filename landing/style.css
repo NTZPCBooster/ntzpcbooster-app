@@ -223,6 +223,7 @@ body {
   transition: color 0.3s;
   position: relative;
 }
+.nav__links a.btn--accent { color: #000; }
 .nav__links a:not(.btn):hover { color: var(--text); }
 .nav__links a:not(.btn)::after {
   content: '';
