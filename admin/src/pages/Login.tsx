@@ -58,8 +58,8 @@ export function Login({ onLogin }: LoginProps) {
     <div className="login">
       <div className="login__card">
         <div className="login__logo">
-          <span className="sidebar__mark">NTZ</span>
-          <span>Painel</span>
+          <img src="/favicon.png" alt="NTZ" width={32} height={32} style={{ borderRadius: 6 }} />
+          <span>NTZ PCBooster</span>
         </div>
 
         <div className="login__tabs">

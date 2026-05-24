@@ -87,7 +87,7 @@ export default function App() {
     <div className="shell">
       <aside className="sidebar">
         <div className="sidebar__logo">
-          <span className="sidebar__mark">NTZ</span>
+          <img src="/favicon.png" alt="NTZ" width={28} height={28} style={{ borderRadius: 4 }} />
           <span className="sidebar__title">{role === 'admin' ? 'Admin' : name || 'Afiliado'}</span>
         </div>
         <nav className="sidebar__nav">
