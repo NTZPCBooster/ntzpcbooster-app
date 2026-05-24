@@ -13,10 +13,12 @@ interface AppearancePanelProps {
   onGridChange: (v: boolean) => void;
   minimizeToTray: boolean;
   onMinimizeToTrayChange: (v: boolean) => void;
+  onExport: () => void;
+  onImport: () => void;
 }
 
 const ACCENTS = [
-  { id: 'green', color: '#00ff41', colorLight: '#15803d' },
+  { id: 'green', color: '#00d958', colorLight: '#15803d' },
   { id: 'cyan',  color: '#06b6d4', colorLight: '#0891b2' },
   { id: 'amber', color: '#f59e0b', colorLight: '#b45309' },
 ];
@@ -25,6 +27,7 @@ export function AppearancePanel({
   open, onClose, theme, onThemeChange,
   accent, onAccentChange, density, onDensityChange,
   grid, onGridChange, minimizeToTray, onMinimizeToTrayChange,
+  onExport, onImport,
 }: AppearancePanelProps) {
   if (!open) return null;
 
@@ -104,6 +107,19 @@ export function AppearancePanel({
         <div className="ap-panel__row">
           <span className="ap-panel__field-label" style={{ marginBottom: 0 }}>Minimizar pra bandeja ao fechar</span>
           <Switch on={minimizeToTray} onChange={onMinimizeToTrayChange} size="sm" />
+        </div>
+
+        {/* CONFIGURACAO */}
+        <div className="ap-panel__section-label mono">CONFIGURACAO</div>
+
+        <div className="ap-panel__field-label">Exportar / importar todas as suas configs e otimizacoes aplicadas.</div>
+        <div className="ap-panel__actions">
+          <button className="btn btn--ghost btn--small" onClick={onExport}>
+            <Icon name="download" size={13} /> Exportar
+          </button>
+          <button className="btn btn--ghost btn--small" onClick={onImport}>
+            <Icon name="upload" size={13} /> Importar
+          </button>
         </div>
       </div>
     </>

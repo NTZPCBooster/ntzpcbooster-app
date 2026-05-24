@@ -6,11 +6,20 @@
  *
  * Routes (via POST body "action"):
  *
+ * ── Public routes (no auth) ──
+ *   coupon.validate        — Validate a coupon code
+ *   coupon.redeem           — Redeem a 100% coupon (creates license directly)
+ *
  * ── Owner routes (require ADMIN_SECRET) ──
  *   admin.overview         — Dashboard stats
  *   admin.licenses         — List all licenses (with pagination/search)
+ *   admin.license.create   — Create a new license
+ *   admin.license.edit     — Edit license fields
  *   admin.revoke           — Revoke a license
  *   admin.transfer         — Transfer mobo binding
+ *   admin.coupons          — List all coupons
+ *   admin.coupon.create    — Create a new coupon
+ *   admin.coupon.toggle    — Enable/disable coupon
  *   admin.affiliates       — List all affiliates with stats
  *   admin.affiliate.create — Create new affiliate
  *   admin.affiliate.toggle — Enable/disable affiliate
@@ -75,6 +84,85 @@ serve(async (req: Request) => {
     const { action } = body;
     const authHeader = req.headers.get('authorization') || '';
     const token = authHeader.replace('Bearer ', '');
+
+    // ═══════════════════════════════════════════════════
+    // PUBLIC COUPON ROUTES (no auth required)
+    // ═══════════════════════════════════════════════════
+
+    if (action === 'coupon.validate') {
+      const { code } = body;
+      if (!code) return errorResponse('Codigo obrigatorio.');
+
+      const { data: coupon } = await supabase
+        .from('coupons')
+        .select('id, code, discount_pct, max_uses, current_uses, active')
+        .eq('code', code.toUpperCase())
+        .single();
+
+      if (!coupon || !coupon.active || coupon.current_uses >= coupon.max_uses) {
+        return jsonResponse({ valid: false });
+      }
+
+      return jsonResponse({ valid: true, discountPct: coupon.discount_pct });
+    }
+
+    if (action === 'coupon.redeem') {
+      const { code, email } = body;
+      if (!code || !email) return errorResponse('Codigo e email obrigatorios.');
+
+      const { data: coupon } = await supabase
+        .from('coupons')
+        .select('*')
+        .eq('code', code.toUpperCase())
+        .single();
+
+      if (!coupon || !coupon.active || coupon.current_uses >= coupon.max_uses) {
+        return errorResponse('Cupom invalido ou esgotado.');
+      }
+
+      if (coupon.discount_pct !== 100) {
+        return errorResponse('Este cupom nao e 100%%. Use o checkout normal com desconto.');
+      }
+
+      // Generate license key
+      const { data: key } = await supabase.rpc('generate_license_key');
+      if (!key) return errorResponse('Erro ao gerar chave.');
+
+      // Create license (lifetime, pending activation)
+      const { data: license, error: licError } = await supabase
+        .from('licenses')
+        .insert({
+          key,
+          email: email.toLowerCase(),
+          plan: 'vitalicio',
+          status: 'pending',
+          expires_at: null,
+        })
+        .select('id, key, email, plan, status')
+        .single();
+
+      if (licError) return errorResponse('Erro ao criar licenca.');
+
+      // Increment coupon usage
+      await supabase
+        .from('coupons')
+        .update({ current_uses: coupon.current_uses + 1 })
+        .eq('id', coupon.id);
+
+      // Record payment with amount 0
+      await supabase
+        .from('payments')
+        .insert({
+          license_id: license.id,
+          buyer_email: email.toLowerCase(),
+          amount: 0,
+          commission_amount: 0,
+          status: 'paid',
+          coupon_code_used: coupon.code,
+        });
+
+      return jsonResponse({ success: true, license });
+    }
 
     // ═══════════════════════════════════════════════════
     // AFFILIATE ROUTES
@@ -232,6 +320,66 @@ serve(async (req: Request) => {
       return jsonResponse({ licenses: data, total: count, page, perPage });
     }
 
+    // ── Create License ──
+    if (action === 'admin.license.create') {
+      const { email, plan, duration } = body;
+      // duration: '7d' | '30d' | '365d' | 'lifetime'
+      if (!email || !plan) return errorResponse('email e plan obrigatorios.');
+
+      // Generate key via DB function
+      const { data: keyRow } = await supabase.rpc('generate_license_key');
+      const key = keyRow;
+      if (!key) return errorResponse('Erro ao gerar chave.');
+
+      let expiresAt: string | null = null;
+      if (duration && duration !== 'lifetime') {
+        const days = parseInt(duration);
+        if (!isNaN(days) && days > 0) {
+          const d = new Date();
+          d.setDate(d.getDate() + days);
+          expiresAt = d.toISOString();
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('licenses')
+        .insert({
+          key,
+          email: email.toLowerCase(),
+          plan: plan === 'mensal' ? 'mensal' : 'vitalicio',
+          status: 'pending',
+          expires_at: expiresAt,
+        })
+        .select('id, key, email, plan, status, expires_at, created_at')
+        .single();
+
+      if (error) return errorResponse(`Erro ao criar licenca: ${error.message}`);
+      return jsonResponse({ success: true, license: data });
+    }
+
+    // ── Edit License ──
+    if (action === 'admin.license.edit') {
+      const { licenseId, email, plan, status, expiresAt, moboId } = body;
+      if (!licenseId) return errorResponse('licenseId obrigatorio.');
+
+      const updates: Record<string, unknown> = {};
+      if (email !== undefined) updates.email = email.toLowerCase();
+      if (plan !== undefined) updates.plan = plan;
+      if (status !== undefined) updates.status = status;
+      if (expiresAt !== undefined) updates.expires_at = expiresAt;
+      if (moboId !== undefined) updates.mobo_id = moboId || null;
+
+      if (Object.keys(updates).length === 0) return errorResponse('Nenhum campo pra atualizar.');
+
+      const { error } = await supabase
+        .from('licenses')
+        .update(updates)
+        .eq('id', licenseId);
+
+      if (error) return errorResponse(`Erro ao editar: ${error.message}`);
+      return jsonResponse({ success: true });
+    }
+
     // ── Revoke License ──
     if (action === 'admin.revoke') {
       const { licenseId } = body;
@@ -257,6 +405,53 @@ serve(async (req: Request) => {
         .eq('id', licenseId);
 
       if (error) return errorResponse('Erro ao transferir.');
+      return jsonResponse({ success: true });
+    }
+
+    // ── Coupons List ──
+    if (action === 'admin.coupons') {
+      const { data } = await supabase
+        .from('coupons')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      return jsonResponse({ coupons: data });
+    }
+
+    // ── Create Coupon ──
+    if (action === 'admin.coupon.create') {
+      const { code, discountPct, maxUses } = body;
+      if (!code || !discountPct) return errorResponse('code e discountPct obrigatorios.');
+
+      const { data, error } = await supabase
+        .from('coupons')
+        .insert({
+          code: code.toUpperCase(),
+          discount_pct: discountPct,
+          max_uses: maxUses || 1,
+        })
+        .select('*')
+        .single();
+
+      if (error) {
+        if (error.code === '23505') return errorResponse('Codigo ja existe.');
+        return errorResponse('Erro ao criar cupom.');
+      }
+
+      return jsonResponse({ success: true, coupon: data });
+    }
+
+    // ── Toggle Coupon ──
+    if (action === 'admin.coupon.toggle') {
+      const { couponId, active } = body;
+      if (!couponId || active === undefined) return errorResponse('couponId e active obrigatorios.');
+
+      const { error } = await supabase
+        .from('coupons')
+        .update({ active })
+        .eq('id', couponId);
+
+      if (error) return errorResponse('Erro ao atualizar cupom.');
       return jsonResponse({ success: true });
     }
 

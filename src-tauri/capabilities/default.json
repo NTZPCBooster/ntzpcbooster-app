@@ -13,6 +13,16 @@
     "updater:default",
     "process:allow-restart",
     "notification:default",
+    "dialog:default",
+    "fs:default",
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-read-text-file",
+      "allow": [{ "path": "**" }]
+    },
     "shell:allow-open",
     "shell:allow-kill",
     "shell:allow-stdin-write",

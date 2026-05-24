@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, type CSSProperties } from 'react';
 import { ICONS } from '../icons';
 import { GearSix } from '@phosphor-icons/react';
 
@@ -206,5 +206,24 @@ export function ScoreGauge({ value = 86, size = 200, label = 'PERFORMANCE' }: Sc
         <div className="gauge__delta mono">+12 desde ontem</div>
       </div>
     </div>
+  );
+}
+
+// ─────────────── SKELETON ───────────────
+interface SkeletonProps {
+  width?: number | string;
+  height?: number | string;
+  variant?: 'text' | 'circle' | 'block';
+  className?: string;
+  style?: CSSProperties;
+}
+
+export function Skeleton({ width, height, variant = 'block', className = '', style }: SkeletonProps) {
+  const cls = variant === 'circle' ? 'skel skel--circle' : 'skel';
+  return (
+    <div
+      className={`${cls} ${className}`}
+      style={{ width, height, ...style }}
+    />
   );
 }

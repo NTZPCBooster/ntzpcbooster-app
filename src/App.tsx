@@ -17,6 +17,7 @@ import { useTrayClose } from "./hooks/useTrayClose";
 import { useStartupItems } from "./hooks/useStartupItems";
 import { useStorageInfo } from "./hooks/useStorageInfo";
 import { useNotify } from "./hooks/useNotify";
+import { useConfigIO } from "./hooks/useConfigIO";
 import { getLicense, checkStoredLicense } from "./lib/license";
 import type { LicenseInfo } from "./lib/license";
 import { STORAGE_KEY } from "./constants";
@@ -122,6 +123,18 @@ function App() {
     setToast({ msg, kind, id: Date.now() });
     setTimeout(() => setToast(null), 2400);
   }, []);
+
+  // ── Config export / import ──
+  const handleConfigImported = useCallback((state: Record<string, unknown>) => {
+    if (state.theme) setTheme(state.theme as "dark" | "light");
+    if (state.accent) setAccent(state.accent as string);
+    if (state.density) setDensity(state.density as string);
+    if (state.grid != null) setGrid(state.grid as boolean);
+    if (state.minimizeToTray != null) setMinimizeToTray(state.minimizeToTray as boolean);
+    if (state.applied) setApplied(state.applied as Record<string, boolean>);
+    if (state.lastRan) setLastRan(state.lastRan as Record<string, string>);
+  }, []);
+  const { exportConfig, importConfig } = useConfigIO(handleConfigImported, showToast);
 
   // Detect real system state (which optimizations are already applied)
   const { detected, detectLoading: _detectLoading, detectError } = useDetectState();
@@ -649,6 +662,8 @@ function App() {
         onGridChange={setGrid}
         minimizeToTray={minimizeToTray}
         onMinimizeToTrayChange={setMinimizeToTray}
+        onExport={exportConfig}
+        onImport={importConfig}
       />
 
       <ConfirmDialog

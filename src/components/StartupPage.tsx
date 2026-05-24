@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Icon, Switch } from "./primitives";
+import { Icon, Switch, Skeleton } from "./primitives";
 import { useStartupItems } from "../hooks/useStartupItems";
 import type { StartupItem } from "../hooks/useStartupItems";
 
@@ -108,10 +108,24 @@ export function StartupPage() {
       </div>
 
       {loading && (
-        <div className="startup-loading">
-          <div className="spinner" />
-          <span className="mono">Lendo programas de inicializacao...</span>
-        </div>
+        <ul className="optlist">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <li key={i} className="optrow">
+              <div className="optrow__main" style={{ cursor: 'default' }}>
+                <div className="optrow__icon">
+                  <Skeleton width={20} height={20} style={{ borderRadius: 3 }} />
+                </div>
+                <div className="optrow__text" style={{ flex: 1 }}>
+                  <Skeleton height={13} width={`${55 + i * 8}%`} />
+                  <Skeleton height={10} width={`${70 + i * 5}%`} style={{ marginTop: 6 }} />
+                </div>
+                <div className="optrow__action">
+                  <Skeleton height={22} width={44} style={{ borderRadius: 11 }} />
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
 
       {error && (

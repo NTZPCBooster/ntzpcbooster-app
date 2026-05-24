@@ -5,7 +5,7 @@
  * sections into the full "Painel" page the user sees on launch.
  */
 import { useState, useEffect } from 'react';
-import { Icon, TickFrame, ScoreGauge, useLiveSeries } from '../primitives';
+import { Icon, TickFrame, ScoreGauge, Skeleton, useLiveSeries } from '../primitives';
 import { CATEGORIES, OPTIMIZATIONS } from '../../data';
 import type { PCInfo, HistoryEntry } from '../../types';
 import { StatCard } from './StatCard';
@@ -26,7 +26,7 @@ interface HeroProps {
   storageTotalMB?: number;
 }
 
-export function Hero({ pc, pcLoading: _pcLoading, score, onNav, onRunOneClick, history, bulkRunning, bulkProgress, applied, storageTotalMB }: HeroProps) {
+export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulkRunning, bulkProgress, applied, storageTotalMB }: HeroProps) {
   // Live series for the 4 stat cards
   const cpuSeries = useLiveSeries(60, [15, 80], 900, 1);
   const gpuSeries = useLiveSeries(60, [10, 70], 1100, 2);
@@ -102,22 +102,17 @@ export function Hero({ pc, pcLoading: _pcLoading, score, onNav, onRunOneClick, h
 
         <TickFrame className="hero__id" label="MACHINE ID" code="0x7F2A">
           <div className="hero__id-grid">
-            <div>
-              <div className="kv__k mono">HOSTNAME</div>
-              <div className="kv__v mono">{pc.hostname}</div>
-            </div>
-            <div>
-              <div className="kv__k mono">SISTEMA</div>
-              <div className="kv__v mono">{pc.os}</div>
-            </div>
-            <div>
-              <div className="kv__k mono">BUILD</div>
-              <div className="kv__v mono">{pc.build}</div>
-            </div>
-            <div>
-              <div className="kv__k mono">UPTIME</div>
-              <div className="kv__v mono">{pc.uptime}</div>
-            </div>
+            {(['HOSTNAME', 'SISTEMA', 'BUILD', 'UPTIME'] as const).map((label, i) => {
+              const vals = [pc.hostname, pc.os, pc.build, pc.uptime];
+              return (
+                <div key={label}>
+                  <div className="kv__k mono">{label}</div>
+                  {pcLoading
+                    ? <Skeleton height={12} width={i < 2 ? 120 : 80} style={{ marginTop: 4 }} />
+                    : <div className="kv__v mono">{vals[i]}</div>}
+                </div>
+              );
+            })}
           </div>
         </TickFrame>
       </header>
@@ -176,6 +171,7 @@ export function Hero({ pc, pcLoading: _pcLoading, score, onNav, onRunOneClick, h
           sub={`${pc.cpu.cores}C / ${pc.cpu.threads}T · ${pc.cpu.boostClock} GHz boost`}
           value={cpuNow} unit="%"
           series={cpuSeries} temp={Math.round(temps.cpu)}
+          loading={pcLoading}
         />
         <StatCard
           label="PLACA DE VIDEO · GPU" meta="02/04"
@@ -184,6 +180,7 @@ export function Hero({ pc, pcLoading: _pcLoading, score, onNav, onRunOneClick, h
           value={gpuNow} unit="%"
           series={gpuSeries} temp={Math.round(temps.gpu)}
           accent="var(--accent-2)"
+          loading={pcLoading}
         />
         <StatCard
           label="MEMORIA · RAM" meta="03/04"
@@ -191,6 +188,7 @@ export function Hero({ pc, pcLoading: _pcLoading, score, onNav, onRunOneClick, h
           sub={`${pc.ram.speed} MHz · ${ramGB} / ${pc.ram.total} GB em uso`}
           value={ramNow} unit="%"
           series={ramSeries}
+          loading={pcLoading}
         />
         <StatCard
           label="REDE · NET" meta="04/04"
@@ -200,6 +198,7 @@ export function Hero({ pc, pcLoading: _pcLoading, score, onNav, onRunOneClick, h
           series={netSeries}
           range={[0, 100]}
           accent="var(--accent-2)"
+          loading={pcLoading}
         />
       </div>
 
@@ -212,32 +211,52 @@ export function Hero({ pc, pcLoading: _pcLoading, score, onNav, onRunOneClick, h
         <p className="sec__sub">Quanto espaco voce tem, e quanto a gente pode liberar.</p>
       </div>
 
-      <TickFrame className="diskcard" label={`DISCO ${pc.disk.letter}:`} code={pc.disk.type}>
-        <div className="diskcard__row">
-          <div className="diskcard__numbers">
-            <div className="diskcard__big mono">{pc.disk.free} <span>GB livres</span></div>
-            <div className="diskcard__small mono">de {pc.disk.total} GB · {Math.round(((pc.disk.total - pc.disk.free) / pc.disk.total) * 100)}% ocupado</div>
-          </div>
-          <button className="btn btn--ghost" onClick={() => onNav('limpeza')}>
-            Limpar disco <Icon name="chevron" size={14} />
-          </button>
-        </div>
-        <div className="diskcard__bar">
-          {[
-            { k: 'Sistema', v: sysPct, c: 'var(--line-strong)' },
-            { k: 'Jogos & apps', v: restPct, c: 'var(--accent)' },
-            { k: 'Outros', v: appPct, c: 'var(--accent-2)' },
-            { k: 'Temp & cache', v: tempPct, c: 'var(--warning)', realGB: tempGB > 0 ? tempGB : undefined },
-          ].map((s, i) => (
-            <div key={i} className="diskcard__seg" style={{ width: `${s.v}%`, background: s.c }} title={`${s.k} · ${s.realGB != null ? s.realGB.toFixed(1) : Math.round(s.v * pc.disk.total / 100)} GB`} />
-          ))}
-        </div>
-        <div className="diskcard__legend mono">
-          <span><i style={{ background: 'var(--line-strong)' }} /> Sistema</span>
-          <span><i style={{ background: 'var(--accent)' }} /> Jogos & apps</span>
-          <span><i style={{ background: 'var(--accent-2)' }} /> Outros</span>
-          <span><i style={{ background: 'var(--warning)' }} /> Temp & cache{tempGB > 0 ? ` · ${tempGB.toFixed(1)} GB` : ''} <strong>↑ pode limpar</strong></span>
-        </div>
+      <TickFrame className="diskcard" label={pcLoading ? 'DISCO' : `DISCO ${pc.disk.letter}:`} code={pcLoading ? '...' : pc.disk.type}>
+        {pcLoading ? (
+          <>
+            <div className="diskcard__row">
+              <div className="diskcard__numbers">
+                <Skeleton height={28} width={180} />
+                <Skeleton height={12} width={220} style={{ marginTop: 8 }} />
+              </div>
+            </div>
+            <Skeleton height={10} width="100%" style={{ marginTop: 16, borderRadius: 6 }} />
+            <div className="diskcard__legend mono" style={{ marginTop: 12 }}>
+              <Skeleton height={10} width={60} />
+              <Skeleton height={10} width={80} />
+              <Skeleton height={10} width={50} />
+              <Skeleton height={10} width={100} />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="diskcard__row">
+              <div className="diskcard__numbers">
+                <div className="diskcard__big mono">{pc.disk.free} <span>GB livres</span></div>
+                <div className="diskcard__small mono">de {pc.disk.total} GB · {Math.round(((pc.disk.total - pc.disk.free) / pc.disk.total) * 100)}% ocupado</div>
+              </div>
+              <button className="btn btn--ghost" onClick={() => onNav('limpeza')}>
+                Limpar disco <Icon name="chevron" size={14} />
+              </button>
+            </div>
+            <div className="diskcard__bar">
+              {[
+                { k: 'Sistema', v: sysPct, c: 'var(--line-strong)' },
+                { k: 'Jogos & apps', v: restPct, c: 'var(--accent)' },
+                { k: 'Outros', v: appPct, c: 'var(--accent-2)' },
+                { k: 'Temp & cache', v: tempPct, c: 'var(--warning)', realGB: tempGB > 0 ? tempGB : undefined },
+              ].map((s, i) => (
+                <div key={i} className="diskcard__seg" style={{ width: `${s.v}%`, background: s.c }} title={`${s.k} · ${s.realGB != null ? s.realGB.toFixed(1) : Math.round(s.v * pc.disk.total / 100)} GB`} />
+              ))}
+            </div>
+            <div className="diskcard__legend mono">
+              <span><i style={{ background: 'var(--line-strong)' }} /> Sistema</span>
+              <span><i style={{ background: 'var(--accent)' }} /> Jogos & apps</span>
+              <span><i style={{ background: 'var(--accent-2)' }} /> Outros</span>
+              <span><i style={{ background: 'var(--warning)' }} /> Temp & cache{tempGB > 0 ? ` · ${tempGB.toFixed(1)} GB` : ''} <strong>↑ pode limpar</strong></span>
+            </div>
+          </>
+        )}
       </TickFrame>
 
       {/* 6. quick actions + recent */}
