@@ -55,6 +55,7 @@ import {
   List,
   Package,
   Cloud,
+  Power,
 } from '@phosphor-icons/react';
 
 export const ICONS: Record<string, PhIcon> = {
@@ -112,4 +113,5 @@ export const ICONS: Record<string, PhIcon> = {
   menu:         List,
   package:      Package,
   cloud:        Cloud,
+  power:        Power,
 };

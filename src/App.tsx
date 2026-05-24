@@ -7,10 +7,16 @@ import { HistoryPage } from "./components/HistoryPage";
 import { AppearancePanel } from "./components/AppearancePanel";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import { ActivationPage } from "./components/ActivationPage";
+import { StartupPage } from "./components/StartupPage";
+import { UpdateChecker } from "./components/UpdateChecker";
 import { Icon } from "./components/primitives";
 import { OPTIMIZATIONS, CATEGORIES, HISTORY } from "./data";
 import { usePCInfo } from "./hooks/usePCInfo";
 import { useDetectState } from "./hooks/useDetectState";
+import { useTrayClose } from "./hooks/useTrayClose";
+import { useStartupItems } from "./hooks/useStartupItems";
+import { useStorageInfo } from "./hooks/useStorageInfo";
+import { useNotify } from "./hooks/useNotify";
 import { getLicense, checkStoredLicense } from "./lib/license";
 import type { LicenseInfo } from "./lib/license";
 import { STORAGE_KEY } from "./constants";
@@ -23,6 +29,7 @@ interface PersistedState {
   accent: string;
   density: string;
   grid: boolean;
+  minimizeToTray: boolean;
   applied: Record<string, boolean>;
   history: HistoryEntry[];
   lastRan: Record<string, string>; // id → ISO timestamp of last execution
@@ -78,6 +85,7 @@ function App() {
   const [accent, setAccent] = useState<string>(persisted.current.accent || "green");
   const [density, setDensity] = useState<string>(persisted.current.density || "cozy");
   const [grid, setGrid] = useState<boolean>(persisted.current.grid ?? true);
+  const [minimizeToTray, setMinimizeToTray] = useState<boolean>(persisted.current.minimizeToTray ?? true);
   const [showAppearance, setShowAppearance] = useState(false);
   const [applied, setApplied] = useState<Record<string, boolean>>(persisted.current.applied || {});
   const [toast, setToast] = useState<{ msg: string; kind: string; id: number } | null>(null);
@@ -98,6 +106,16 @@ function App() {
 
   // Dynamic PC info (from usePCInfo hook)
   const { pcInfo, pcLoading } = usePCInfo();
+
+  // Startup items count for sidebar
+  const { items: startupItems } = useStartupItems();
+
+  // Real storage measurement for cleanup page
+  const { sizes: storageSizes, totalMB: storageTotalMB, remeasure: remeasureStorage } = useStorageInfo();
+  const dynamicCounts: Record<string, number> = startupItems.length > 0 ? { startup: startupItems.length } : {};
+
+  // Native Windows toast notifications
+  const notify = useNotify();
 
   // ── Helpers (defined before effects that reference them) ──
   const showToast = useCallback((msg: string, kind = "ok") => {
@@ -126,10 +144,13 @@ function App() {
     }
   }, [detectError, showToast]);
 
+  // System tray: intercept close if user prefers minimize-to-tray
+  useTrayClose(minimizeToTray);
+
   // Persist state on change
   useEffect(() => {
-    savePersisted({ theme, accent, density, grid, applied, history, lastRan });
-  }, [theme, accent, density, grid, applied, history, lastRan]);
+    savePersisted({ theme, accent, density, grid, minimizeToTray, applied, history, lastRan });
+  }, [theme, accent, density, grid, minimizeToTray, applied, history, lastRan]);
 
   // Apply theme / accent / density / grid to root
   useEffect(() => {
@@ -223,9 +244,11 @@ function App() {
         setApplied((prev) => ({ ...prev, [id]: val }));
         showToast(`${val ? "Aplicado" : "Desfeito"}: ${item.title}`);
         addHistory(item.title, val ? "ativado" : "desativado", item.category);
+        notify("NTZ PCBooster", `${val ? "Ativado" : "Desativado"}: ${item.title}`);
       } catch (err) {
         const detail = err instanceof Error ? err.message : String(err);
         showToast(`Erro: ${item.title} — ${detail.slice(0, 120)}`, "error");
+        notify("Erro — NTZ PCBooster", `${item.title}: ${detail.slice(0, 80)}`);
       } finally {
         setRunning((prev) => {
           const next = new Set(prev);
@@ -234,7 +257,7 @@ function App() {
         });
       }
     },
-    [executeScript, showToast, addHistory]
+    [executeScript, showToast, addHistory, notify]
   );
 
   const doApply = useCallback(
@@ -248,9 +271,13 @@ function App() {
         setLastRan((prev) => ({ ...prev, [id]: new Date().toISOString() }));
         showToast(`Executado: ${item.title}`);
         addHistory(item.title, "executado", item.category);
+        notify("NTZ PCBooster", `Concluído: ${item.title}`);
+        // Re-measure storage after cleanup
+        if (item.category === "limpeza") remeasureStorage();
       } catch (err) {
         const detail = err instanceof Error ? err.message : String(err);
         showToast(`Erro: ${item.title} — ${detail.slice(0, 120)}`, "error");
+        notify("Erro — NTZ PCBooster", `${item.title}: ${detail.slice(0, 80)}`);
       } finally {
         setRunning((prev) => {
           const next = new Set(prev);
@@ -259,7 +286,7 @@ function App() {
         });
       }
     },
-    [executeScript, showToast, addHistory]
+    [executeScript, showToast, addHistory, notify, remeasureStorage]
   );
 
   // ── Public toggle/apply with risk confirmation ──
@@ -352,8 +379,10 @@ function App() {
         setApplied(next);
         showToast("Boost completo aplicado");
         addHistory("Boost Completo", "+14 no score estimado", "gaming");
+        notify("NTZ PCBooster", "Boost completo aplicado — todas as otimizações de gaming ativas.");
       } else {
-        const opts = OPTIMIZATIONS.filter((o) => o.category === "limpeza");
+        const SKIP_AUTO_CLEAN = ['bloatware', 'remove-onedrive'];
+        const opts = OPTIMIZATIONS.filter((o) => o.category === "limpeza" && !SKIP_AUTO_CLEAN.includes(o.id));
         for (let i = 0; i < opts.length; i++) {
           const opt = opts[i];
           setBulkProgress({ done: i, total: opts.length, current: opt.title });
@@ -377,11 +406,13 @@ function App() {
         });
         showToast("Limpeza completa concluída");
         addHistory("Limpeza Completa", "espaço liberado", "limpeza");
+        notify("NTZ PCBooster", "Limpeza completa concluída — espaço liberado no disco.");
+        remeasureStorage();
       }
       setBulkRunning(null);
       setBulkProgress(null);
     },
-    [applied, executeScript, showToast, addHistory]
+    [applied, executeScript, showToast, addHistory, notify, remeasureStorage]
   );
 
   // ── Bulk toggle for category (enable all / disable all) ──
@@ -426,6 +457,7 @@ function App() {
 
       const action = enable ? "ativadas" : "desativadas";
       showToast(`${succeeded.length}/${targets.length} otimizações ${action}`);
+      notify("NTZ PCBooster", `${succeeded.length}/${targets.length} otimizações ${action}.`);
       addHistory(
         `${enable ? 'Ativar' : 'Desativar'} todos — ${category}`,
         `${succeeded.length} itens ${action}`,
@@ -434,7 +466,7 @@ function App() {
       setBulkRunning(null);
       setBulkProgress(null);
     },
-    [applied, executeScript, showToast, addHistory]
+    [applied, executeScript, showToast, addHistory, notify]
   );
 
   // Performance score based on applied optimizations
@@ -465,6 +497,7 @@ function App() {
             bulkRunning={bulkRunning}
             bulkProgress={bulkProgress}
             applied={applied}
+            storageTotalMB={storageTotalMB}
           />
         );
       case "gaming":
@@ -499,6 +532,8 @@ function App() {
             running={running}
             bulkRunning={bulkRunning === "limpeza"}
             lastRan={lastRan}
+            storageSizes={storageSizes}
+            storageTotalMB={storageTotalMB}
           />
         );
       case "tweaks":
@@ -518,6 +553,8 @@ function App() {
             isWin11={isWin11}
           />
         );
+      case "startup":
+        return <StartupPage />;
       case "hardware":
         return <HardwarePage pc={pcInfo} loading={pcLoading} />;
       case "historico":
@@ -560,6 +597,7 @@ function App() {
         theme={theme}
         onThemeChange={(t: string) => setTheme(t as "dark" | "light")}
         onOpenAppearance={() => setShowAppearance(true)}
+        dynamicCounts={dynamicCounts}
       />
 
       <main className="main">
@@ -596,6 +634,8 @@ function App() {
         </div>
       )}
 
+      <UpdateChecker />
+
       <AppearancePanel
         open={showAppearance}
         onClose={() => setShowAppearance(false)}
@@ -607,6 +647,8 @@ function App() {
         onDensityChange={setDensity}
         grid={grid}
         onGridChange={setGrid}
+        minimizeToTray={minimizeToTray}
+        onMinimizeToTrayChange={setMinimizeToTray}
       />
 
       <ConfirmDialog

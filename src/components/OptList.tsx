@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { Icon, Switch } from './primitives';
 import { Optimization } from '../types';
+import { formatSize } from '../hooks/useStorageInfo';
+import type { StorageSizes } from '../hooks/useStorageInfo';
 
 /** Format an ISO timestamp into a relative "há X" string. */
 function timeAgo(iso: string): string {
@@ -25,9 +27,10 @@ interface OptimizationRowProps {
   isRunning: boolean;
   lastRanAt?: string;
   isWin11?: boolean;
+  sizeMB?: number;
 }
 
-function OptimizationRow({ item, applied, onToggle, onApply, expanded, onToggleExpand, isRunning, lastRanAt, isWin11 }: OptimizationRowProps) {
+function OptimizationRow({ item, applied, onToggle, onApply, expanded, onToggleExpand, isRunning, lastRanAt, isWin11, sizeMB }: OptimizationRowProps) {
   const isToggle = !item.runOnce;
   const isLocked = !!(isWin11 && item.win11Note);
   return (
@@ -42,7 +45,12 @@ function OptimizationRow({ item, applied, onToggle, onApply, expanded, onToggleE
               risco: {item.risk}
             </span>
           </div>
-          <div className="optrow__short">{item.short}</div>
+          <div className="optrow__short">
+            {item.short}
+            {sizeMB != null && sizeMB > 0 && (
+              <span className="optrow__size mono"> — {formatSize(sizeMB)}</span>
+            )}
+          </div>
         </div>
         <div className="optrow__expand mono">
           {expanded ? '−' : '+'}
@@ -118,9 +126,11 @@ interface OptListProps {
   bulkRunning?: boolean;
   lastRan?: Record<string, string>;
   isWin11?: boolean;
+  storageSizes?: StorageSizes;
+  storageTotalMB?: number;
 }
 
-export function OptList({ items, applied, onToggle, onApply, onBulkToggle, title, subtitle, code, running, bulkRunning, lastRan, isWin11 }: OptListProps) {
+export function OptList({ items, applied, onToggle, onApply, onBulkToggle, title, subtitle, code, running, bulkRunning, lastRan, isWin11, storageSizes, storageTotalMB }: OptListProps) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
@@ -147,6 +157,9 @@ export function OptList({ items, applied, onToggle, onApply, onBulkToggle, title
           <div className="mono optlist-page__eyebrow">— SEÇÃO {code}</div>
           <h1 className="optlist-page__title">{title}</h1>
           <p className="optlist-page__sub">{subtitle}</p>
+          {storageTotalMB != null && storageTotalMB > 0 && (
+            <p className="optlist-page__storage-hint mono">Espaco recuperavel: <strong>{formatSize(storageTotalMB)}</strong></p>
+          )}
         </div>
         <div className="optlist-page__stats mono">
           <div>
@@ -156,6 +169,10 @@ export function OptList({ items, applied, onToggle, onApply, onBulkToggle, title
           <div>
             <div className="kv__k">ATIVOS</div>
             <div className="kv__big">{onCount.toString().padStart(2, '0')}</div>
+          </div>
+          <div>
+            <div className="kv__k">INATIVOS</div>
+            <div className="kv__big">{(items.length - onCount).toString().padStart(2, '0')}</div>
           </div>
         </div>
       </header>
@@ -218,6 +235,7 @@ export function OptList({ items, applied, onToggle, onApply, onBulkToggle, title
             isRunning={running.has(it.id)}
             lastRanAt={lastRan?.[it.id]}
             isWin11={isWin11}
+            sizeMB={storageSizes?.[it.id]}
           />
         ))}
       </ul>

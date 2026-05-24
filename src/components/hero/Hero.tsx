@@ -23,9 +23,10 @@ interface HeroProps {
   bulkRunning: string | null;
   bulkProgress: BulkProgress | null;
   applied: Record<string, boolean>;
+  storageTotalMB?: number;
 }
 
-export function Hero({ pc, pcLoading: _pcLoading, score, onNav, onRunOneClick, history, bulkRunning, bulkProgress, applied }: HeroProps) {
+export function Hero({ pc, pcLoading: _pcLoading, score, onNav, onRunOneClick, history, bulkRunning, bulkProgress, applied, storageTotalMB }: HeroProps) {
   // Live series for the 4 stat cards
   const cpuSeries = useLiveSeries(60, [15, 80], 900, 1);
   const gpuSeries = useLiveSeries(60, [10, 70], 1100, 2);
@@ -63,13 +64,16 @@ export function Hero({ pc, pcLoading: _pcLoading, score, onNav, onRunOneClick, h
     return 'Ha espaco pra melhorar bastante.';
   }
 
-  // ── Dynamic disk breakdown ──
+  // ── Dynamic disk breakdown (real temp data when available) ──
   const diskUsed = pc.disk.total - pc.disk.free;
   const diskUsedPct = pc.disk.total ? Math.round((diskUsed / pc.disk.total) * 100) : 0;
-  // Estimate segments proportionally from used space
-  const tempPct = Math.max(1, Math.round(diskUsedPct * 0.06));  // ~6% of used is temp
-  const appPct = Math.max(1, Math.round(diskUsedPct * 0.15));
+  // Temp & cache: use real measurement (MB → GB → % of total disk)
+  const tempGB = storageTotalMB ? storageTotalMB / 1024 : 0;
+  const tempPct = pc.disk.total && tempGB > 0
+    ? Math.max(1, Math.round((tempGB / pc.disk.total) * 100))
+    : Math.max(1, Math.round(diskUsedPct * 0.06)); // fallback estimate
   const sysPct = Math.max(1, Math.round(diskUsedPct * 0.35));
+  const appPct = Math.max(1, Math.round(diskUsedPct * 0.15));
   const restPct = Math.max(0, diskUsedPct - tempPct - appPct - sysPct);
 
   // CPU/GPU faux temps that wobble
@@ -223,16 +227,16 @@ export function Hero({ pc, pcLoading: _pcLoading, score, onNav, onRunOneClick, h
             { k: 'Sistema', v: sysPct, c: 'var(--line-strong)' },
             { k: 'Jogos & apps', v: restPct, c: 'var(--accent)' },
             { k: 'Outros', v: appPct, c: 'var(--accent-2)' },
-            { k: 'Temp & cache', v: tempPct, c: 'var(--warning)' },
+            { k: 'Temp & cache', v: tempPct, c: 'var(--warning)', realGB: tempGB > 0 ? tempGB : undefined },
           ].map((s, i) => (
-            <div key={i} className="diskcard__seg" style={{ width: `${s.v}%`, background: s.c }} title={`${s.k} · ${Math.round(s.v * pc.disk.total / 100)} GB`} />
+            <div key={i} className="diskcard__seg" style={{ width: `${s.v}%`, background: s.c }} title={`${s.k} · ${s.realGB != null ? s.realGB.toFixed(1) : Math.round(s.v * pc.disk.total / 100)} GB`} />
           ))}
         </div>
         <div className="diskcard__legend mono">
           <span><i style={{ background: 'var(--line-strong)' }} /> Sistema</span>
           <span><i style={{ background: 'var(--accent)' }} /> Jogos & apps</span>
           <span><i style={{ background: 'var(--accent-2)' }} /> Outros</span>
-          <span><i style={{ background: 'var(--warning)' }} /> Temp & cache <strong>↑ pode limpar</strong></span>
+          <span><i style={{ background: 'var(--warning)' }} /> Temp & cache{tempGB > 0 ? ` · ${tempGB.toFixed(1)} GB` : ''} <strong>↑ pode limpar</strong></span>
         </div>
       </TickFrame>
 

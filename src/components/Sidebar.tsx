@@ -7,9 +7,10 @@ interface SidebarProps {
   theme: string;
   onThemeChange: (theme: string) => void;
   onOpenAppearance: () => void;
+  dynamicCounts?: Record<string, number>;
 }
 
-export function Sidebar({ current, onNav, theme, onThemeChange, onOpenAppearance }: SidebarProps) {
+export function Sidebar({ current, onNav, theme, onThemeChange, onOpenAppearance, dynamicCounts }: SidebarProps) {
   return (
     <aside className="sidebar">
       <div className="sidebar__brand">
@@ -33,7 +34,9 @@ export function Sidebar({ current, onNav, theme, onThemeChange, onOpenAppearance
               <span className="navitem__index mono">{String(i + 1).padStart(2, '0')}</span>
               <Icon name={c.short} size={16} />
               <span className="navitem__label">{c.label}</span>
-              {c.count != null && <span className="navitem__count mono">{c.count}</span>}
+              {(dynamicCounts?.[c.id] ?? c.count) != null && (
+                <span className="navitem__count mono">{dynamicCounts?.[c.id] ?? c.count}</span>
+              )}
               {active && <span className="navitem__marker" />}
             </button>
           );

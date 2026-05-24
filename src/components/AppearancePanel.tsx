@@ -11,6 +11,8 @@ interface AppearancePanelProps {
   onDensityChange: (d: string) => void;
   grid: boolean;
   onGridChange: (v: boolean) => void;
+  minimizeToTray: boolean;
+  onMinimizeToTrayChange: (v: boolean) => void;
 }
 
 const ACCENTS = [
@@ -22,7 +24,7 @@ const ACCENTS = [
 export function AppearancePanel({
   open, onClose, theme, onThemeChange,
   accent, onAccentChange, density, onDensityChange,
-  grid, onGridChange,
+  grid, onGridChange, minimizeToTray, onMinimizeToTrayChange,
 }: AppearancePanelProps) {
   if (!open) return null;
 
@@ -94,6 +96,14 @@ export function AppearancePanel({
         <div className="ap-panel__row">
           <span className="ap-panel__field-label" style={{ marginBottom: 0 }}>Grade blueprint</span>
           <Switch on={grid} onChange={onGridChange} size="sm" />
+        </div>
+
+        {/* COMPORTAMENTO */}
+        <div className="ap-panel__section-label mono">COMPORTAMENTO</div>
+
+        <div className="ap-panel__row">
+          <span className="ap-panel__field-label" style={{ marginBottom: 0 }}>Minimizar pra bandeja ao fechar</span>
+          <Switch on={minimizeToTray} onChange={onMinimizeToTrayChange} size="sm" />
         </div>
       </div>
     </>

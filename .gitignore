@@ -27,3 +27,8 @@ npm-debug.log*
 # Tauri build artifacts
 src-tauri/WixTools/
 src-tauri/target/
+
+# Tauri updater signing key (SECRET — never commit!)
+src-tauri/.tauri-updater.key
+*.key
+.tauri-updater.key

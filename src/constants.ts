@@ -14,5 +14,6 @@ export type PageId =
   | 'gaming'
   | 'limpeza'
   | 'tweaks'
+  | 'startup'
   | 'hardware'
   | 'historico';

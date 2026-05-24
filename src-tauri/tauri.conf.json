@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicovrc/tauri-docs/refs/heads/dev/tooling/cli/schema.json",
   "productName": "NTZ PCBooster",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "identifier": "com.ntz.pcbooster",
   "build": {
     "frontendDist": "../dist",
@@ -46,6 +46,12 @@
   "plugins": {
     "shell": {
       "open": true
+    },
+    "updater": {
+      "endpoints": [
+        "https://github.com/NTZPCBooster/ntzpcbooster-app/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc1NUE5NTM0QTFFMjQ0QUEKUldTcVJPS2hOSlZhZFlGQXc4cFlCb3QxYU1sOW9jbjIrUEJ5QmRicXFud1FxamVxNzFwMExGL0cK"
     }
   }
 }

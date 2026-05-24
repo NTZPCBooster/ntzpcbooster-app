@@ -378,7 +378,7 @@ export const OPTIMIZATIONS: Optimization[] = [
     id: 'browser-cache', category: 'limpeza', title: 'Cache de Navegadores', short: 'Limpa Chrome, Edge e Firefox',
     long: 'Remove cache de imagens, scripts e estilos dos navegadores. Nao mexe em senhas nem historico. Pode liberar de 500 MB a 5 GB.',
     admin: false, risk: 'nenhum', icon: 'compass', runOnce: true,
-    script: `$paths=@("$env:LOCALAPPDATA\\Google\\Chrome\\User Data\\Default\\Cache","$env:LOCALAPPDATA\\Microsoft\\Edge\\User Data\\Default\\Cache","$env:LOCALAPPDATA\\Mozilla\\Firefox\\Profiles"); foreach($p in $paths){if(Test-Path $p){Remove-Item "$p\\*" -Recurse -Force -ErrorAction SilentlyContinue}}`,
+    script: `$paths=@("$env:LOCALAPPDATA\\Google\\Chrome\\User Data\\Default\\Cache","$env:LOCALAPPDATA\\Google\\Chrome\\User Data\\Default\\Code Cache","$env:LOCALAPPDATA\\Microsoft\\Edge\\User Data\\Default\\Cache","$env:LOCALAPPDATA\\Microsoft\\Edge\\User Data\\Default\\Code Cache"); foreach($p in $paths){if(Test-Path $p){Remove-Item "$p\\*" -Recurse -Force -ErrorAction SilentlyContinue}}; $ffBase="$env:LOCALAPPDATA\\Mozilla\\Firefox\\Profiles"; if(Test-Path $ffBase){Get-ChildItem $ffBase -Directory | ForEach-Object { $c="$($_.FullName)\\cache2"; if(Test-Path $c){Remove-Item "$c\\*" -Recurse -Force -ErrorAction SilentlyContinue}}}`,
   },
   {
     id: 'win-logs', category: 'limpeza', title: 'Logs do Windows', short: 'Apaga logs antigos do sistema',

@@ -7,6 +7,7 @@ export const CATEGORIES: CategoryInfo[] = [
   { id: 'gaming',    label: 'Gaming Boost',  short: 'gamepad',  count: OPTIMIZATIONS.filter(o => o.category === 'gaming').length },
   { id: 'limpeza',   label: 'Limpeza',       short: 'trash',    count: OPTIMIZATIONS.filter(o => o.category === 'limpeza').length },
   { id: 'tweaks',    label: 'Tweaks',        short: 'sliders',  count: OPTIMIZATIONS.filter(o => o.category === 'tweaks').length },
+  { id: 'startup',   label: 'Inicializacao', short: 'power',    count: null },
   { id: 'hardware',  label: 'Hardware',      short: 'cpu',      count: null },
   { id: 'historico', label: 'Historico',      short: 'clock',    count: null },
 ];
