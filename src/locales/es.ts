@@ -75,8 +75,11 @@ export default {
   'stat.gpu': 'TARJETA DE VIDEO · GPU',
   'stat.ram': 'MEMORIA · RAM',
   'stat.net': 'RED · NET',
+  'stat.disk': 'DISCO · I/O',
   'stat.netModel': 'Adaptador de red',
-  'stat.netSub': 'actividad de red en tiempo real',
+  'stat.netSub': 'descarga / subida en tiempo real',
+  'stat.diskModel': 'Lectura + Escritura',
+  'stat.diskSub': 'actividad de disco en tiempo real',
   'stat.inUse': 'en uso',
 
   // ── Driver banner ──

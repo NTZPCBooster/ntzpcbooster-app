@@ -4,14 +4,14 @@
  * Composes StatCard, DriverBanner, OneClickBar and several TickFrame
  * sections into the full "Painel" page the user sees on launch.
  */
-import { useState, useEffect } from 'react';
-import { Icon, TickFrame, ScoreGauge, Skeleton, useLiveSeries } from '../primitives';
+import { Icon, TickFrame, ScoreGauge, Skeleton } from '../primitives';
 import { CATEGORIES, OPTIMIZATIONS } from '../../data';
 import type { PCInfo, HistoryEntry } from '../../types';
 import { StatCard } from './StatCard';
 import { DriverBanner } from './DriverBanner';
 import { OneClickBar, type BulkProgress } from './OneClickBar';
 import { useI18n } from '../../i18n';
+import { useSystemMonitor } from '../../hooks/useSystemMonitor';
 
 // ─────────────── HERO ───────────────
 interface HeroProps {
@@ -30,16 +30,15 @@ interface HeroProps {
 export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulkRunning, bulkProgress, applied, storageTotalMB }: HeroProps) {
   const { t } = useI18n();
 
-  // Live series for the 4 stat cards
-  const cpuSeries = useLiveSeries(60, [15, 80], 900, 1);
-  const gpuSeries = useLiveSeries(60, [10, 70], 1100, 2);
-  const ramSeries = useLiveSeries(60, [40, 75], 1500, 3);
-  const netSeries = useLiveSeries(60, [0, 60], 700, 4);
+  // Real-time system monitoring (CPU, GPU, RAM, Disk, Net)
+  const monitor = useSystemMonitor();
+  const { current: metrics } = monitor;
 
-  const cpuNow = Math.round(cpuSeries[cpuSeries.length - 1]);
-  const gpuNow = Math.round(gpuSeries[gpuSeries.length - 1]);
-  const ramNow = Math.round(ramSeries[ramSeries.length - 1]);
-  const netNow = Math.round(netSeries[netSeries.length - 1]);
+  const cpuNow = metrics.cpu;
+  const gpuNow = metrics.gpu;
+  const ramNow = metrics.ram;
+  const netNow = Math.round(metrics.netDown + metrics.netUp);
+  const diskNow = Math.round((metrics.diskRead + metrics.diskWrite) * 10) / 10;
   const ramGB = ((ramNow / 100) * pc.ram.total).toFixed(1);
 
   // ── Dynamic score breakdown bars ──
@@ -79,17 +78,8 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
   const appPct = Math.max(1, Math.round(diskUsedPct * 0.15));
   const restPct = Math.max(0, diskUsedPct - tempPct - appPct - sysPct);
 
-  // CPU/GPU faux temps that wobble
-  const [temps, setTemps] = useState({ cpu: 62, gpu: 58 });
-  useEffect(() => {
-    const id = setInterval(() => {
-      setTemps(t => ({
-        cpu: Math.max(40, Math.min(85, t.cpu + (Math.random() - 0.5) * 3)),
-        gpu: Math.max(35, Math.min(80, t.gpu + (Math.random() - 0.5) * 2.5)),
-      }));
-    }, 1400);
-    return () => clearInterval(id);
-  }, []);
+  // Temperatures from real monitor (or fallback mock data)
+  const temps = { cpu: metrics.cpuTemp, gpu: metrics.gpuTemp };
 
   return (
     <section className="hero">
@@ -169,36 +159,45 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
 
       <div className="hero__stats">
         <StatCard
-          label={t('stat.cpu')} meta="01/04"
+          label={t('stat.cpu')} meta="01/05"
           model={pc.cpu.model}
           sub={`${pc.cpu.cores}C / ${pc.cpu.threads}T · ${pc.cpu.boostClock} GHz boost`}
           value={cpuNow} unit="%"
-          series={cpuSeries} temp={Math.round(temps.cpu)}
+          series={monitor.cpuSeries} temp={temps.cpu || undefined}
           loading={pcLoading}
         />
         <StatCard
-          label={t('stat.gpu')} meta="02/04"
+          label={t('stat.gpu')} meta="02/05"
           model={pc.gpu.model}
           sub={`${pc.gpu.vram} GB VRAM · driver ${pc.gpu.driver}`}
           value={gpuNow} unit="%"
-          series={gpuSeries} temp={Math.round(temps.gpu)}
+          series={monitor.gpuSeries} temp={temps.gpu || undefined}
           accent="var(--accent-2)"
           loading={pcLoading}
         />
         <StatCard
-          label={t('stat.ram')} meta="03/04"
+          label={t('stat.ram')} meta="03/05"
           model={`${pc.ram.total} GB ${pc.ram.type}`}
           sub={`${pc.ram.speed} MHz · ${ramGB} / ${pc.ram.total} GB ${t('stat.inUse')}`}
           value={ramNow} unit="%"
-          series={ramSeries}
+          series={monitor.ramSeries}
           loading={pcLoading}
         />
         <StatCard
-          label={t('stat.net')} meta="04/04"
+          label={t('stat.disk')} meta="04/05"
+          model={t('stat.diskModel')}
+          sub={`${t('stat.diskSub')} · R:${metrics.diskRead} / W:${metrics.diskWrite} MB/s`}
+          value={diskNow} unit="MB/s"
+          series={monitor.diskSeries}
+          range={[0, 200]}
+          loading={pcLoading}
+        />
+        <StatCard
+          label={t('stat.net')} meta="05/05"
           model={t('stat.netModel')}
-          sub={t('stat.netSub')}
-          value={netNow} unit="Mb/s"
-          series={netSeries}
+          sub={`${t('stat.netSub')} · ↓${metrics.netDown} / ↑${metrics.netUp} Mbps`}
+          value={netNow} unit="Mbps"
+          series={monitor.netSeries}
           range={[0, 100]}
           accent="var(--accent-2)"
           loading={pcLoading}
