@@ -328,6 +328,7 @@ body {
 .badge--pending { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
 .badge--revoked, .badge--refunded, .badge--rejected { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
 .badge--expired { background: rgba(100, 116, 139, 0.12); color: #94a3b8; }
+.badge--anual { background: rgba(167, 139, 250, 0.12); color: #a78bfa; }
 .badge--vitalicio { background: rgba(167, 139, 250, 0.12); color: #a78bfa; }
 .badge--mensal { background: rgba(6, 182, 212, 0.12); color: #06b6d4; }
 

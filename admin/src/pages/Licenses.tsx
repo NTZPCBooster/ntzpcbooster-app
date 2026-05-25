@@ -20,7 +20,7 @@ export function Licenses() {
 
   // Create modal
   const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState({ email: '', plan: 'vitalicio' as 'vitalicio' | 'mensal', duration: 'lifetime' });
+  const [createForm, setCreateForm] = useState({ email: '', plan: 'anual' as 'anual' | 'mensal' | 'vitalicio', duration: '365' });
   const [creating, setCreating] = useState(false);
   const [createdKey, setCreatedKey] = useState('');
 
@@ -75,7 +75,7 @@ export function Licenses() {
   const closeCreate = () => {
     setShowCreate(false);
     setCreatedKey('');
-    setCreateForm({ email: '', plan: 'vitalicio' as 'vitalicio' | 'mensal', duration: 'lifetime' });
+    setCreateForm({ email: '', plan: 'anual' as 'anual' | 'mensal' | 'vitalicio', duration: '365' });
   };
 
   // ── Edit ──
@@ -278,26 +278,31 @@ export function Licenses() {
                     className="search-input"
                     value={createForm.plan}
                     onChange={e => {
-                      const plan = e.target.value as 'vitalicio' | 'mensal';
-                      setCreateForm({
-                        ...createForm,
-                        plan,
-                        duration: plan === 'vitalicio' ? 'lifetime' : (createForm.duration === 'lifetime' ? '30' : createForm.duration),
-                      });
+                      const plan = e.target.value as 'anual' | 'mensal' | 'vitalicio';
+                      let duration = createForm.duration;
+                      if (plan === 'vitalicio') duration = 'lifetime';
+                      else if (plan === 'anual') duration = '365';
+                      else if (duration === 'lifetime' || duration === '365') duration = '30';
+                      setCreateForm({ ...createForm, plan, duration });
                     }}
                   >
-                    <option value="vitalicio">Vitalicio</option>
+                    <option value="anual">Anual</option>
                     <option value="mensal">Mensal</option>
+                    <option value="vitalicio">Vitalicio (legacy)</option>
                   </select>
                   <label>Duracao</label>
                   <select
                     className="search-input"
                     value={createForm.duration}
                     onChange={e => setCreateForm({ ...createForm, duration: e.target.value })}
-                    disabled={createForm.plan === 'vitalicio'}
+                    disabled={createForm.plan === 'vitalicio' || createForm.plan === 'anual'}
                   >
                     {DURATION_OPTIONS
-                      .filter(d => createForm.plan === 'vitalicio' ? d.value === 'lifetime' : d.value !== 'lifetime')
+                      .filter(d => {
+                        if (createForm.plan === 'vitalicio') return d.value === 'lifetime';
+                        if (createForm.plan === 'anual') return d.value === '365';
+                        return d.value !== 'lifetime' && d.value !== '365';
+                      })
                       .map(d => (
                         <option key={d.value} value={d.value}>{d.label}</option>
                       ))}
@@ -335,8 +340,9 @@ export function Licenses() {
                 value={editForm.plan}
                 onChange={e => setEditForm({ ...editForm, plan: e.target.value })}
               >
-                <option value="vitalicio">Vitalicio</option>
+                <option value="anual">Anual</option>
                 <option value="mensal">Mensal</option>
+                <option value="vitalicio">Vitalicio (legacy)</option>
               </select>
               <label>Status</label>
               <select

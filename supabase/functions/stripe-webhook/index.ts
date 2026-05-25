@@ -67,7 +67,7 @@ serve(async (req: Request) => {
     const session = event.data.object as Stripe.Checkout.Session;
 
     const buyerEmail = session.customer_details?.email || session.customer_email || '';
-    const plan = (session.metadata?.plan as 'vitalicio' | 'mensal') || 'vitalicio';
+    const plan = (session.metadata?.plan as 'anual' | 'mensal' | 'vitalicio') || 'anual';
     const couponCode = session.metadata?.coupon_code || null;
     const amountTotal = session.amount_total || 0; // in centavos (BRL)
 
@@ -75,10 +75,14 @@ serve(async (req: Request) => {
     const { data: keyResult } = await supabase.rpc('generate_license_key');
     const licenseKey = keyResult as string;
 
-    // Calculate expiry for monthly plans (30 days)
-    const expiresAt = plan === 'mensal'
-      ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-      : null;
+    // Calculate expiry based on plan
+    let expiresAt: string | null = null;
+    if (plan === 'mensal') {
+      expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    } else if (plan === 'anual') {
+      expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+    }
+    // vitalicio (legacy) = null = never expires
 
     // Create license
     const { data: license, error: licError } = await supabase
@@ -156,7 +160,8 @@ serve(async (req: Request) => {
     // ── Send license key + download link via Resend ──
     if (buyerEmail) {
       try {
-        const planLabel = plan === 'vitalicio' ? 'Vitalicio' : 'Mensal';
+        const planLabels: Record<string, string> = { mensal: 'Mensal', anual: 'Anual', vitalicio: 'Vitalicio' };
+        const planLabel = planLabels[plan] || 'Anual';
         const downloadUrl = 'https://github.com/NTZPCBooster/ntzpcbooster-app/releases/latest/download/NTZ-PCBooster-Setup.exe';
 
         const emailHtml = `

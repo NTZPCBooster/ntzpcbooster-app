@@ -309,7 +309,7 @@ async function applyCoupon() {
 // PRICE DISPLAY UPDATE
 // ═══════════════════════════════════════════════════
 
-const ORIGINAL_PRICES = { monthly: 19.90, lifetime: 79.90 };
+const ORIGINAL_PRICES = { monthly: 19.90, annual: 119.90 };
 
 function formatBRL(value) {
   return value.toFixed(2).replace('.', ',');
@@ -317,18 +317,18 @@ function formatBRL(value) {
 
 function updatePriceDisplay(pct) {
   const monthlyEl = document.getElementById('priceMonthly');
-  const lifetimeEl = document.getElementById('priceLifetime');
+  const annualEl = document.getElementById('priceAnnual');
 
   if (pct > 0 && pct < 100) {
     const newMonthly = ORIGINAL_PRICES.monthly * (1 - pct / 100);
-    const newLifetime = ORIGINAL_PRICES.lifetime * (1 - pct / 100);
+    const newAnnual = ORIGINAL_PRICES.annual * (1 - pct / 100);
 
     monthlyEl.innerHTML = `<span class="price-old">${formatBRL(ORIGINAL_PRICES.monthly)}</span> ${formatBRL(newMonthly)}`;
-    lifetimeEl.innerHTML = `<span class="price-old">${formatBRL(ORIGINAL_PRICES.lifetime)}</span> ${formatBRL(newLifetime)}`;
+    annualEl.innerHTML = `<span class="price-old">${formatBRL(ORIGINAL_PRICES.annual)}</span> ${formatBRL(newAnnual)}`;
   } else {
     // Reset to original
     monthlyEl.textContent = formatBRL(ORIGINAL_PRICES.monthly);
-    lifetimeEl.textContent = formatBRL(ORIGINAL_PRICES.lifetime);
+    annualEl.textContent = formatBRL(ORIGINAL_PRICES.annual);
   }
 }
 

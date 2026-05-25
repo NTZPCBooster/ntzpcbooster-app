@@ -48,9 +48,15 @@ serve(async (req: Request) => {
     });
 
     // Determine price ID
-    const priceId = plan === 'mensal'
-      ? Deno.env.get('STRIPE_PRICE_MONTHLY')!
-      : Deno.env.get('STRIPE_PRICE_LIFETIME')!;
+    let priceId: string;
+    if (plan === 'mensal') {
+      priceId = Deno.env.get('STRIPE_PRICE_MONTHLY')!;
+    } else if (plan === 'anual') {
+      priceId = Deno.env.get('STRIPE_PRICE_ANNUAL')!;
+    } else {
+      // Fallback for legacy 'vitalicio' links
+      priceId = Deno.env.get('STRIPE_PRICE_ANNUAL')!;
+    }
 
     // Check coupon code for discount (search both affiliates and standalone coupons)
     let discountPct = 0;
@@ -101,7 +107,7 @@ serve(async (req: Request) => {
 
     // Build checkout session params
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
-      mode: plan === 'mensal' ? 'subscription' : 'payment',
+      mode: plan === 'mensal' ? 'subscription' : 'payment', // anual = one-time payment
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: successUrl,

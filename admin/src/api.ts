@@ -58,7 +58,7 @@ export const getOverview = () => call('admin.overview');
 export const getLicenses = (page = 1, search = '') =>
   call('admin.licenses', { page, search });
 export const createLicense = (data: {
-  email: string; plan: 'vitalicio' | 'mensal'; duration: string;
+  email: string; plan: 'anual' | 'mensal' | 'vitalicio'; duration: string;
 }) => call('admin.license.create', data);
 export const editLicense = (licenseId: string, updates: {
   email?: string; plan?: string; status?: string; expiresAt?: string | null; moboId?: string | null;
