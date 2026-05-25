@@ -1,8 +1,12 @@
 /**
  * useSystemMonitor — Real-time system metrics via PowerShell.
  *
- * Polls every 3 seconds for CPU %, RAM %, GPU %, temperatures,
+ * Polls every 5 seconds for CPU %, RAM %, GPU %, temperatures,
  * disk I/O (MB/s), and network throughput (Mbps).
+ *
+ * Uses Win32_PerfFormattedData_PerfOS_Processor for CPU — same
+ * counter as Task Manager — instead of Win32_Processor.LoadPercentage
+ * which is known to be inaccurate.
  *
  * On browser (dev mode) falls back to randomized mock data.
  */
@@ -30,7 +34,7 @@ export interface MonitorState {
 }
 
 const SERIES_LENGTH = 60;
-const POLL_INTERVAL = 3000;
+const POLL_INTERVAL = 5000;
 
 const EMPTY_METRICS: SystemMetrics = {
   cpu: 0, ram: 0, gpu: 0,
@@ -39,33 +43,19 @@ const EMPTY_METRICS: SystemMetrics = {
   netDown: 0, netUp: 0,
 };
 
-// PowerShell script that gathers all metrics in one shot
+// Lean PowerShell script — 4 lightweight WMI calls + nvidia-smi
+// Uses PerfOS_Processor (same as Task Manager) instead of Win32_Processor.LoadPercentage
 const MONITOR_SCRIPT = `
-$cpuLoad = 0
-try { $cpuLoad = (Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average } catch {}
-$os = Get-CimInstance Win32_OperatingSystem
-$ramPct = [math]::Round(($os.TotalVisibleMemorySize - $os.FreePhysicalMemory) / $os.TotalVisibleMemorySize * 100)
-$gpuUse = 0; $gpuTemp = 0
-try {
-  $nv = & 'nvidia-smi' '--query-gpu=utilization.gpu,temperature.gpu' '--format=csv,noheader,nounits' 2>$null
-  if ($LASTEXITCODE -eq 0 -and $nv) { $p = $nv.Trim() -split ','; $gpuUse = [int]$p[0].Trim(); $gpuTemp = [int]$p[1].Trim() }
-} catch {}
-$cpuTemp = 0
-try { $tz = Get-CimInstance MSAcpi_ThermalZoneTemperature -Namespace root/wmi -ErrorAction Stop | Select-Object -First 1; if ($tz) { $cpuTemp = [math]::Round(($tz.CurrentTemperature - 2732) / 10) } } catch {}
-$dr = 0; $dw = 0
-try {
-  $perf = Get-CimInstance Win32_PerfFormattedData_PerfDisk_PhysicalDisk -Filter "Name='_Total'" -ErrorAction Stop
-  $dr = [math]::Round($perf.DiskReadBytesPersec / 1MB, 1)
-  $dw = [math]::Round($perf.DiskWriteBytesPersec / 1MB, 1)
-} catch {}
-$nd = 0; $nu = 0
-try {
-  $nics = Get-CimInstance Win32_PerfFormattedData_Tcpip_NetworkInterface -ErrorAction Stop
-  foreach ($n in $nics) { $nd += $n.BytesReceivedPersec; $nu += $n.BytesSentPersec }
-  $nd = [math]::Round($nd / 1MB * 8, 1)
-  $nu = [math]::Round($nu / 1MB * 8, 1)
-} catch {}
-@{ cpu=[int]$cpuLoad; ram=[int]$ramPct; gpu=$gpuUse; cpuTemp=$cpuTemp; gpuTemp=$gpuTemp; diskRead=$dr; diskWrite=$dw; netDown=$nd; netUp=$nu } | ConvertTo-Json -Compress
+$c=[math]::Round((Get-CimInstance Win32_PerfFormattedData_PerfOS_Processor -Filter "Name='_Total'" -Property PercentProcessorTime).PercentProcessorTime)
+$o=Get-CimInstance Win32_OperatingSystem -Property TotalVisibleMemorySize,FreePhysicalMemory
+$r=[math]::Round(($o.TotalVisibleMemorySize-$o.FreePhysicalMemory)/$o.TotalVisibleMemorySize*100)
+$g=0;$gt=0
+try{$nv=&'nvidia-smi' '--query-gpu=utilization.gpu,temperature.gpu' '--format=csv,noheader,nounits' 2>$null;if($LASTEXITCODE-eq 0-and$nv){$p=$nv.Trim()-split',';$g=[int]$p[0].Trim();$gt=[int]$p[1].Trim()}}catch{}
+$dr=0;$dw=0
+try{$dk=Get-CimInstance Win32_PerfFormattedData_PerfDisk_PhysicalDisk -Filter "Name='_Total'" -Property DiskReadBytesPersec,DiskWriteBytesPersec -ErrorAction Stop;$dr=[math]::Round($dk.DiskReadBytesPersec/1MB,1);$dw=[math]::Round($dk.DiskWriteBytesPersec/1MB,1)}catch{}
+$nd=0;$nu=0
+try{Get-CimInstance Win32_PerfFormattedData_Tcpip_NetworkInterface -Property BytesReceivedPersec,BytesSentPersec -ErrorAction Stop|ForEach-Object{$nd+=$_.BytesReceivedPersec;$nu+=$_.BytesSentPersec};$nd=[math]::Round($nd/1MB*8,1);$nu=[math]::Round($nu/1MB*8,1)}catch{}
+@{cpu=$c;ram=$r;gpu=$g;gpuTemp=$gt;diskRead=$dr;diskWrite=$dw;netDown=$nd;netUp=$nu}|ConvertTo-Json -Compress
 `.trim();
 
 function randomWobble(prev: number, min: number, max: number): number {
@@ -94,11 +84,16 @@ export function useSystemMonitor(): MonitorState {
   });
 
   const isTauri = useRef(!!(window as any).__TAURI_INTERNALS__);
+  // Cache the shell module so we don't dynamic-import every poll
+  const shellRef = useRef<any>(null);
 
   const fetchMetrics = useCallback(async (): Promise<SystemMetrics | null> => {
     if (!isTauri.current) return null;
     try {
-      const { Command } = await import('@tauri-apps/plugin-shell');
+      if (!shellRef.current) {
+        shellRef.current = await import('@tauri-apps/plugin-shell');
+      }
+      const { Command } = shellRef.current;
       const cmd = Command.create('powershell', [
         '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', MONITOR_SCRIPT,
       ]);
@@ -109,7 +104,7 @@ export function useSystemMonitor(): MonitorState {
         cpu: d.cpu ?? 0,
         ram: d.ram ?? 0,
         gpu: d.gpu ?? 0,
-        cpuTemp: d.cpuTemp ?? 0,
+        cpuTemp: 0, // removed CPU temp query (MSAcpi unreliable + heavy)
         gpuTemp: d.gpuTemp ?? 0,
         diskRead: d.diskRead ?? 0,
         diskWrite: d.diskWrite ?? 0,
@@ -123,6 +118,7 @@ export function useSystemMonitor(): MonitorState {
 
   useEffect(() => {
     let active = true;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     const poll = async () => {
       const metrics = await fetchMetrics();
@@ -161,12 +157,16 @@ export function useSystemMonitor(): MonitorState {
           netSeries: [...prev.netSeries.slice(1), newMetrics.netDown + newMetrics.netUp],
         };
       });
+
+      // Schedule next poll AFTER current one completes (avoids overlap)
+      if (active) {
+        timeoutId = setTimeout(poll, POLL_INTERVAL);
+      }
     };
 
     // Initial poll
     poll();
-    const id = setInterval(poll, POLL_INTERVAL);
-    return () => { active = false; clearInterval(id); };
+    return () => { active = false; clearTimeout(timeoutId); };
   }, [fetchMetrics]);
 
   return state;
