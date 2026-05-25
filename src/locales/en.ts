@@ -260,6 +260,9 @@ export default {
   'toast.bulkEnabled': '{count}/{total} optimizations enabled',
   'toast.bulkDisabled': '{count}/{total} optimizations disabled',
   'toast.keyCopied': 'Key copied.',
+  'toast.licenseCreated': 'License created successfully.',
+  'toast.licenseUpdated': 'License updated.',
+  'toast.licenseFree': 'License created successfully.',
 
   // Notify
   'notify.boostDone': 'Full boost applied — all gaming optimizations active.',
