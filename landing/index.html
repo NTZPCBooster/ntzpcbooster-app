@@ -174,7 +174,22 @@
         <span id="couponMsg" class="coupon-bar__msg"></span>
       </div>
 
-      <div class="pricing__grid">
+      <!-- Free redeem form (shown when 100% coupon) -->
+      <div id="redeemBox" class="redeem-box" style="display:none;">
+        <div class="redeem-box__inner">
+          <h3 class="redeem-box__title"><i class="ph ph-gift"></i> Resgate gratuito</h3>
+          <p class="redeem-box__desc">Cupom 100% aplicado! Digite seu email para receber a chave:</p>
+          <div class="redeem-box__form">
+            <input type="email" id="redeemEmail" class="redeem-box__input" placeholder="seu@email.com" />
+            <button id="redeemBtn" class="btn btn--accent btn--lg" onclick="redeemFree()">
+              <i class="ph ph-key"></i> Resgatar gratis
+            </button>
+          </div>
+          <span id="redeemMsg" class="redeem-box__msg"></span>
+        </div>
+      </div>
+
+      <div class="pricing__grid" id="pricingGrid">
         <!-- Monthly -->
         <div class="price-card reveal reveal--left">
           <div class="price-card__header">

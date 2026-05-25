@@ -264,21 +264,88 @@ async function applyCoupon() {
         'Content-Type': 'application/json',
         'apikey': SUPABASE_ANON_KEY,
       },
-      body: JSON.stringify({ action: 'coupon.check', code }),
+      body: JSON.stringify({ action: 'coupon.validate', code }),
     });
 
-    activeCoupon = code;
-    msg.textContent = `Cupom "${code}" sera aplicado no checkout!`;
-    msg.className = 'coupon-bar__msg coupon-bar__msg--ok';
-    input.disabled = true;
+    const data = await res.json();
+
+    if (data.valid) {
+      activeCoupon = code;
+      discountPct = data.discountPct || 0;
+      msg.textContent = `Cupom "${code}" aplicado! ${discountPct}% de desconto.`;
+      msg.className = 'coupon-bar__msg coupon-bar__msg--ok';
+      input.disabled = true;
+
+      // 100% coupon: show redeem form, hide pricing cards
+      if (discountPct === 100) {
+        document.getElementById('redeemBox').style.display = 'block';
+        document.getElementById('pricingGrid').style.display = 'none';
+      } else {
+        document.getElementById('redeemBox').style.display = 'none';
+        document.getElementById('pricingGrid').style.display = '';
+      }
+    } else {
+      activeCoupon = null;
+      discountPct = 0;
+      msg.textContent = 'Cupom invalido ou esgotado.';
+      msg.className = 'coupon-bar__msg coupon-bar__msg--error';
+      document.getElementById('redeemBox').style.display = 'none';
+      document.getElementById('pricingGrid').style.display = '';
+    }
   } catch {
-    activeCoupon = code;
-    msg.textContent = `Cupom "${code}" sera validado no checkout.`;
-    msg.className = 'coupon-bar__msg coupon-bar__msg--ok';
-    input.disabled = true;
+    activeCoupon = null;
+    discountPct = 0;
+    msg.textContent = 'Erro ao validar cupom. Tente novamente.';
+    msg.className = 'coupon-bar__msg coupon-bar__msg--error';
   } finally {
     btn.disabled = false;
     btn.textContent = 'Aplicar';
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// FREE REDEEM (100% coupon)
+// ═══════════════════════════════════════════════════
+
+async function redeemFree() {
+  const emailInput = document.getElementById('redeemEmail');
+  const btn = document.getElementById('redeemBtn');
+  const msg = document.getElementById('redeemMsg');
+  const email = emailInput.value.trim();
+
+  if (!email || !email.includes('@')) {
+    msg.textContent = 'Digite um email valido.';
+    msg.className = 'redeem-box__msg redeem-box__msg--error';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Resgatando...';
+  msg.textContent = '';
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/admin`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ action: 'coupon.redeem', code: activeCoupon, email }),
+    });
+
+    const data = await res.json();
+
+    if (data.success && data.license) {
+      // Redirect to success page
+      window.location.href = '/success.html';
+    } else {
+      throw new Error(data.error || 'Erro ao resgatar.');
+    }
+  } catch (err) {
+    msg.textContent = err.message || 'Erro ao resgatar. Tente novamente.';
+    msg.className = 'redeem-box__msg redeem-box__msg--error';
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ph ph-key"></i> Resgatar gratis';
   }
 }
 

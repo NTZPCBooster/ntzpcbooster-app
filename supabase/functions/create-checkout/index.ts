@@ -52,9 +52,10 @@ serve(async (req: Request) => {
       ? Deno.env.get('STRIPE_PRICE_MONTHLY')!
       : Deno.env.get('STRIPE_PRICE_LIFETIME')!;
 
-    // Check coupon code for discount
+    // Check coupon code for discount (search both affiliates and standalone coupons)
     let discountPct = 0;
     let validCoupon: string | null = null;
+    let couponSource: 'affiliate' | 'coupon' | null = null;
 
     if (couponCode) {
       const supabase = createClient(
@@ -62,6 +63,7 @@ serve(async (req: Request) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
       );
 
+      // 1. Check affiliate coupons first
       const { data: affiliate } = await supabase
         .from('affiliates')
         .select('coupon_code, discount_pct, active')
@@ -71,6 +73,29 @@ serve(async (req: Request) => {
       if (affiliate && affiliate.active) {
         discountPct = affiliate.discount_pct;
         validCoupon = affiliate.coupon_code;
+        couponSource = 'affiliate';
+      }
+
+      // 2. If not found in affiliates, check standalone coupons table
+      if (!validCoupon) {
+        const { data: coupon } = await supabase
+          .from('coupons')
+          .select('code, discount_pct, max_uses, current_uses, active')
+          .eq('code', couponCode.toUpperCase())
+          .single();
+
+        if (coupon && coupon.active && coupon.current_uses < coupon.max_uses) {
+          if (coupon.discount_pct === 100) {
+            // 100% coupons bypass Stripe entirely — should use coupon.redeem instead
+            return new Response(
+              JSON.stringify({ error: 'Cupom 100%: use o resgate direto, nao o checkout.' }),
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+            );
+          }
+          discountPct = coupon.discount_pct;
+          validCoupon = coupon.code;
+          couponSource = 'coupon';
+        }
       }
     }
 

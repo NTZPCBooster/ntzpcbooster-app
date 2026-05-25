@@ -35,7 +35,7 @@
  */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import * as bcrypt from 'https://deno.land/x/bcrypt@v0.4.1/mod.ts';
+import bcrypt from 'https://esm.sh/bcryptjs@2.4.3';
 import { create, verify } from 'https://deno.land/x/djwt@v3.0.1/mod.ts';
 
 const corsHeaders = {
@@ -93,17 +93,29 @@ serve(async (req: Request) => {
       const { code } = body;
       if (!code) return errorResponse('Codigo obrigatorio.');
 
+      // Check standalone coupons table first
       const { data: coupon } = await supabase
         .from('coupons')
         .select('id, code, discount_pct, max_uses, current_uses, active')
         .eq('code', code.toUpperCase())
         .single();
 
-      if (!coupon || !coupon.active || coupon.current_uses >= coupon.max_uses) {
-        return jsonResponse({ valid: false });
+      if (coupon && coupon.active && coupon.current_uses < coupon.max_uses) {
+        return jsonResponse({ valid: true, discountPct: coupon.discount_pct });
       }
 
-      return jsonResponse({ valid: true, discountPct: coupon.discount_pct });
+      // Check affiliate coupons
+      const { data: affiliate } = await supabase
+        .from('affiliates')
+        .select('coupon_code, discount_pct, active')
+        .eq('coupon_code', code.toUpperCase())
+        .single();
+
+      if (affiliate && affiliate.active) {
+        return jsonResponse({ valid: true, discountPct: affiliate.discount_pct });
+      }
+
+      return jsonResponse({ valid: false });
     }
 
     if (action === 'coupon.redeem') {
@@ -161,6 +173,65 @@ serve(async (req: Request) => {
           coupon_code_used: coupon.code,
         });
 
+      // Send license email via Resend
+      const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+      if (RESEND_API_KEY) {
+        const downloadUrl = 'https://github.com/NTZPCBooster/ntzpcbooster-app/releases/latest/download/NTZ-PCBooster-Setup.exe';
+        const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"/></head>
+<body style="margin:0;padding:0;background:#0a0a0a;font-family:'Segoe UI',Arial,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;padding:40px 24px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <h1 style="color:#00ff41;font-size:22px;margin:0;letter-spacing:1px;">NTZ PCBOOSTER</h1>
+      <p style="color:#666;font-size:13px;margin:6px 0 0;">Otimizacao de PC para jogos</p>
+    </div>
+    <div style="background:#111;border:1px solid #1a1a1a;border-radius:12px;padding:32px;text-align:center;">
+      <h2 style="color:#fff;font-size:20px;margin:0 0 8px;">Resgate confirmado!</h2>
+      <p style="color:#888;font-size:14px;margin:0 0 28px;">Cupom <strong style="color:#00ff41;">${coupon.code}</strong> aplicado. Aqui esta sua chave:</p>
+      <div style="background:#0a0a0a;border:2px solid #00ff41;border-radius:8px;padding:18px 24px;margin:0 0 24px;">
+        <span style="color:#00ff41;font-family:'Courier New',monospace;font-size:22px;font-weight:bold;letter-spacing:3px;">${key}</span>
+      </div>
+      <p style="color:#666;font-size:12px;margin:0 0 28px;">Plano: <strong style="color:#fff;">Vitalicio</strong></p>
+      <div style="margin:0 0 24px;">
+        <a href="${downloadUrl}" style="display:inline-block;background:#00ff41;color:#000;font-weight:700;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;">
+          Baixar NTZ PCBooster
+        </a>
+      </div>
+      <div style="text-align:left;background:#0d0d0d;border-radius:8px;padding:20px 24px;">
+        <p style="color:#fff;font-size:14px;font-weight:600;margin:0 0 14px;">Como ativar:</p>
+        <p style="color:#aaa;font-size:13px;margin:0 0 10px;"><span style="color:#00ff41;font-weight:bold;">1.</span> Baixe e instale o NTZ PCBooster</p>
+        <p style="color:#aaa;font-size:13px;margin:0 0 10px;"><span style="color:#00ff41;font-weight:bold;">2.</span> Abra o app e clique em "Ativar licenca"</p>
+        <p style="color:#aaa;font-size:13px;margin:0;"><span style="color:#00ff41;font-weight:bold;">3.</span> Cole a chave acima e pronto!</p>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:28px;">
+      <p style="color:#444;font-size:12px;margin:0;">Duvidas? <a href="mailto:suporte@ntzpcbooster.com" style="color:#00ff41;text-decoration:none;">suporte@ntzpcbooster.com</a></p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+        try {
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${RESEND_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: 'NTZ PCBooster <noreply@ntzpcbooster.com>',
+              to: [email.toLowerCase()],
+              subject: 'Sua chave NTZ PCBooster — Resgate gratuito',
+              html: emailHtml,
+            }),
+          });
+        } catch (emailErr) {
+          console.error('Failed to send redeem email:', emailErr);
+        }
+      }
+
       return jsonResponse({ success: true, license });
     }
 
@@ -181,7 +252,7 @@ serve(async (req: Request) => {
       if (!affiliate) return errorResponse('Credenciais invalidas.', 401);
       if (!affiliate.active) return errorResponse('Conta desativada.', 403);
 
-      const valid = await bcrypt.compare(password, affiliate.password_hash);
+      const valid = bcrypt.compareSync(password, affiliate.password_hash);
       if (!valid) return errorResponse('Credenciais invalidas.', 401);
 
       const key = await getJwtKey();
@@ -472,7 +543,7 @@ serve(async (req: Request) => {
         return errorResponse('name, email, couponCode e password obrigatorios.');
       }
 
-      const hash = await bcrypt.hash(password);
+      const hash = bcrypt.hashSync(password, 10);
 
       const { data, error } = await supabase
         .from('affiliates')

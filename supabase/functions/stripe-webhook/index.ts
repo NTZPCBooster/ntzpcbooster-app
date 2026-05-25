@@ -103,6 +103,7 @@ serve(async (req: Request) => {
     let commissionAmount = 0;
 
     if (couponCode) {
+      // Check affiliate coupon
       const { data: affiliate } = await supabase
         .from('affiliates')
         .select('id, commission_pct, active')
@@ -112,6 +113,20 @@ serve(async (req: Request) => {
       if (affiliate && affiliate.active) {
         affiliateId = affiliate.id;
         commissionAmount = Math.floor(amountTotal * (affiliate.commission_pct / 100));
+      }
+
+      // Increment usage on standalone coupons table (if it exists there)
+      const { data: coupon } = await supabase
+        .from('coupons')
+        .select('id, current_uses')
+        .eq('code', couponCode.toUpperCase())
+        .single();
+
+      if (coupon) {
+        await supabase
+          .from('coupons')
+          .update({ current_uses: coupon.current_uses + 1 })
+          .eq('id', coupon.id);
       }
     }
 

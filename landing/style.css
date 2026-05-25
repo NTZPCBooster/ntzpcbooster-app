@@ -514,6 +514,60 @@ body {
 .coupon-bar__msg--ok { color: var(--accent); }
 .coupon-bar__msg--error { color: #ef4444; }
 
+/* Redeem box (100% coupon) */
+.redeem-box {
+  max-width: 520px;
+  margin: 2rem auto;
+}
+.redeem-box__inner {
+  background: rgba(0, 255, 65, 0.04);
+  border: 1px solid rgba(0, 255, 65, 0.25);
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+}
+.redeem-box__title {
+  color: var(--accent);
+  font-size: 1.4rem;
+  margin: 0 0 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.redeem-box__desc {
+  color: #aaa;
+  font-size: 0.95rem;
+  margin: 0 0 1.5rem;
+}
+.redeem-box__form {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+.redeem-box__input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 14px 16px;
+  color: #fff;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.redeem-box__input:focus {
+  border-color: var(--accent);
+}
+.redeem-box__input::placeholder { color: #555; }
+.redeem-box__msg {
+  display: block;
+  margin-top: 1rem;
+  font-size: 0.85rem;
+}
+.redeem-box__msg--ok { color: var(--accent); }
+.redeem-box__msg--error { color: #ef4444; }
+
 /* Price cards */
 .pricing__grid {
   display: grid;
