@@ -514,6 +514,15 @@ body {
 .coupon-bar__msg--ok { color: var(--accent); }
 .coupon-bar__msg--error { color: #ef4444; }
 
+/* Discounted price (strikethrough original) */
+.price-old {
+  text-decoration: line-through;
+  color: #555;
+  font-size: 0.55em;
+  margin-right: 0.3em;
+  font-weight: 400;
+}
+
 /* Redeem box (100% coupon) */
 .redeem-box {
   max-width: 520px;

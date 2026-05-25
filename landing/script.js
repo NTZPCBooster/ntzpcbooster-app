@@ -283,6 +283,7 @@ async function applyCoupon() {
       } else {
         document.getElementById('redeemBox').style.display = 'none';
         document.getElementById('pricingGrid').style.display = '';
+        updatePriceDisplay(discountPct);
       }
     } else {
       activeCoupon = null;
@@ -291,6 +292,7 @@ async function applyCoupon() {
       msg.className = 'coupon-bar__msg coupon-bar__msg--error';
       document.getElementById('redeemBox').style.display = 'none';
       document.getElementById('pricingGrid').style.display = '';
+      updatePriceDisplay(0);
     }
   } catch {
     activeCoupon = null;
@@ -300,6 +302,33 @@ async function applyCoupon() {
   } finally {
     btn.disabled = false;
     btn.textContent = 'Aplicar';
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// PRICE DISPLAY UPDATE
+// ═══════════════════════════════════════════════════
+
+const ORIGINAL_PRICES = { monthly: 19.90, lifetime: 79.90 };
+
+function formatBRL(value) {
+  return value.toFixed(2).replace('.', ',');
+}
+
+function updatePriceDisplay(pct) {
+  const monthlyEl = document.getElementById('priceMonthly');
+  const lifetimeEl = document.getElementById('priceLifetime');
+
+  if (pct > 0 && pct < 100) {
+    const newMonthly = ORIGINAL_PRICES.monthly * (1 - pct / 100);
+    const newLifetime = ORIGINAL_PRICES.lifetime * (1 - pct / 100);
+
+    monthlyEl.innerHTML = `<span class="price-old">${formatBRL(ORIGINAL_PRICES.monthly)}</span> ${formatBRL(newMonthly)}`;
+    lifetimeEl.innerHTML = `<span class="price-old">${formatBRL(ORIGINAL_PRICES.lifetime)}</span> ${formatBRL(newLifetime)}`;
+  } else {
+    // Reset to original
+    monthlyEl.textContent = formatBRL(ORIGINAL_PRICES.monthly);
+    lifetimeEl.textContent = formatBRL(ORIGINAL_PRICES.lifetime);
   }
 }
 
