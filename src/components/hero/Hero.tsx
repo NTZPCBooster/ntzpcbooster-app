@@ -11,6 +11,7 @@ import type { PCInfo, HistoryEntry } from '../../types';
 import { StatCard } from './StatCard';
 import { DriverBanner } from './DriverBanner';
 import { OneClickBar, type BulkProgress } from './OneClickBar';
+import { useI18n } from '../../i18n';
 
 // ─────────────── HERO ───────────────
 interface HeroProps {
@@ -27,6 +28,8 @@ interface HeroProps {
 }
 
 export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulkRunning, bulkProgress, applied, storageTotalMB }: HeroProps) {
+  const { t } = useI18n();
+
   // Live series for the 4 stat cards
   const cpuSeries = useLiveSeries(60, [15, 80], 900, 1);
   const gpuSeries = useLiveSeries(60, [10, 70], 1100, 2);
@@ -58,10 +61,10 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
   const lastAction = history.length > 0 ? history[0] : null;
 
   function scoreQuip(): string {
-    if (score >= 90) return 'Sua maquina esta voando.';
-    if (score >= 80) return 'Muito acima da media.';
-    if (score >= 72) return 'Acima da media.';
-    return 'Ha espaco pra melhorar bastante.';
+    if (score >= 90) return t('hero.quipFlying');
+    if (score >= 80) return t('hero.quipGreat');
+    if (score >= 72) return t('hero.quipAbove');
+    return t('hero.quipRoom');
   }
 
   // ── Dynamic disk breakdown (real temp data when available) ──
@@ -93,16 +96,16 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
       {/* 1. greeting + machine header */}
       <header className="hero__head">
         <div className="hero__greeting">
-          <div className="mono hero__eyebrow">— OLA, {pc.user.toUpperCase()}</div>
-          <h1 className="hero__title">Seu PC esta <em>pronto pra acelerar</em>.</h1>
+          <div className="mono hero__eyebrow">— {t('hero.greeting', { user: pc.user.toUpperCase() })}</div>
+          <h1 className="hero__title" dangerouslySetInnerHTML={{ __html: t('hero.title') }} />
           <p className="hero__lead">
-            Aqui e o painel da sua maquina. Tudo que ta rolando agora, e o que da pra fazer pra melhorar.
+            {t('hero.lead')}
           </p>
         </div>
 
         <TickFrame className="hero__id" label="MACHINE ID" code="0x7F2A">
           <div className="hero__id-grid">
-            {(['HOSTNAME', 'SISTEMA', 'BUILD', 'UPTIME'] as const).map((label, i) => {
+            {(['HOSTNAME', t('common.system').toUpperCase(), 'BUILD', 'UPTIME'] as const).map((label, i) => {
               const vals = [pc.hostname, pc.os, pc.build, pc.uptime];
               return (
                 <div key={label}>
@@ -121,19 +124,19 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
       <div className="hero__score">
         <TickFrame className="hero__score-main" label="PERFORMANCE SCORE" code="P-INDEX">
           <div className="hero__score-row">
-            <ScoreGauge value={score} size={200} label="DE 100" />
+            <ScoreGauge value={score} size={200} label={t('hero.scoreLabel')} />
             <div className="hero__score-side">
               <div className="hero__score-quip mono">
                 ▸ {scoreQuip()}<br />
-                {possibleGain > 0 && <>▸ Ganhe +{possibleGain} aplicando o Boost Completo.<br /></>}
+                {possibleGain > 0 && <>▸ {t('hero.boostGain', { gain: String(possibleGain) })}<br /></>}
                 {lastAction
-                  ? <>▸ Ultima acao: {lastAction.title}.</>
-                  : <>▸ Nenhuma otimizacao aplicada ainda.</>}
+                  ? <>▸ {t('hero.lastAction', { title: lastAction.title })}</>
+                  : <>▸ {t('hero.noAction')}</>}
               </div>
               <div className="hero__score-bars">
                 {[
                   { k: 'Gaming', v: gamingPct },
-                  { k: 'Limpeza', v: limpezaPct },
+                  { k: t('nav.limpeza'), v: limpezaPct },
                   { k: 'Drivers', v: driverPct },
                   { k: 'Tweaks', v: tweaksPct },
                 ].map(b => (
@@ -159,14 +162,14 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
       <div className="hero__statsec">
         <h2 className="sec__title">
           <span className="mono sec__num">01</span>
-          Em tempo real
+          {t('hero.realtime')}
         </h2>
-        <p className="sec__sub">O que sua maquina esta fazendo agora mesmo. Atualiza sozinho.</p>
+        <p className="sec__sub">{t('hero.realtimeSub')}</p>
       </div>
 
       <div className="hero__stats">
         <StatCard
-          label="PROCESSADOR · CPU" meta="01/04"
+          label={t('stat.cpu')} meta="01/04"
           model={pc.cpu.model}
           sub={`${pc.cpu.cores}C / ${pc.cpu.threads}T · ${pc.cpu.boostClock} GHz boost`}
           value={cpuNow} unit="%"
@@ -174,7 +177,7 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
           loading={pcLoading}
         />
         <StatCard
-          label="PLACA DE VIDEO · GPU" meta="02/04"
+          label={t('stat.gpu')} meta="02/04"
           model={pc.gpu.model}
           sub={`${pc.gpu.vram} GB VRAM · driver ${pc.gpu.driver}`}
           value={gpuNow} unit="%"
@@ -183,17 +186,17 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
           loading={pcLoading}
         />
         <StatCard
-          label="MEMORIA · RAM" meta="03/04"
+          label={t('stat.ram')} meta="03/04"
           model={`${pc.ram.total} GB ${pc.ram.type}`}
-          sub={`${pc.ram.speed} MHz · ${ramGB} / ${pc.ram.total} GB em uso`}
+          sub={`${pc.ram.speed} MHz · ${ramGB} / ${pc.ram.total} GB ${t('stat.inUse')}`}
           value={ramNow} unit="%"
           series={ramSeries}
           loading={pcLoading}
         />
         <StatCard
-          label="REDE · NET" meta="04/04"
-          model="Adaptador de rede"
-          sub="atividade de rede em tempo real"
+          label={t('stat.net')} meta="04/04"
+          model={t('stat.netModel')}
+          sub={t('stat.netSub')}
           value={netNow} unit="Mb/s"
           series={netSeries}
           range={[0, 100]}
@@ -206,9 +209,9 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
       <div className="hero__statsec">
         <h2 className="sec__title">
           <span className="mono sec__num">02</span>
-          Armazenamento
+          {t('hero.storage')}
         </h2>
-        <p className="sec__sub">Quanto espaco voce tem, e quanto a gente pode liberar.</p>
+        <p className="sec__sub">{t('hero.storageSub')}</p>
       </div>
 
       <TickFrame className="diskcard" label={pcLoading ? 'DISCO' : `DISCO ${pc.disk.letter}:`} code={pcLoading ? '...' : pc.disk.type}>
@@ -232,28 +235,28 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
           <>
             <div className="diskcard__row">
               <div className="diskcard__numbers">
-                <div className="diskcard__big mono">{pc.disk.free} <span>GB livres</span></div>
-                <div className="diskcard__small mono">de {pc.disk.total} GB · {Math.round(((pc.disk.total - pc.disk.free) / pc.disk.total) * 100)}% ocupado</div>
+                <div className="diskcard__big mono">{pc.disk.free} <span>{t('hero.diskFree', { free: String(pc.disk.free) }).replace(`${pc.disk.free} `, '')}</span></div>
+                <div className="diskcard__small mono">{t('hero.diskOf', { total: String(pc.disk.total), pct: String(Math.round(((pc.disk.total - pc.disk.free) / pc.disk.total) * 100)) })}</div>
               </div>
               <button className="btn btn--ghost" onClick={() => onNav('limpeza')}>
-                Limpar disco <Icon name="chevron" size={14} />
+                {t('hero.cleanDisk')} <Icon name="chevron" size={14} />
               </button>
             </div>
             <div className="diskcard__bar">
               {[
-                { k: 'Sistema', v: sysPct, c: 'var(--line-strong)' },
-                { k: 'Jogos & apps', v: restPct, c: 'var(--accent)' },
-                { k: 'Outros', v: appPct, c: 'var(--accent-2)' },
-                { k: 'Temp & cache', v: tempPct, c: 'var(--warning)', realGB: tempGB > 0 ? tempGB : undefined },
+                { k: t('hero.diskSystem'), v: sysPct, c: 'var(--line-strong)' },
+                { k: t('hero.diskGames'), v: restPct, c: 'var(--accent)' },
+                { k: t('hero.diskOther'), v: appPct, c: 'var(--accent-2)' },
+                { k: t('hero.diskTemp'), v: tempPct, c: 'var(--warning)', realGB: tempGB > 0 ? tempGB : undefined },
               ].map((s, i) => (
                 <div key={i} className="diskcard__seg" style={{ width: `${s.v}%`, background: s.c }} title={`${s.k} · ${s.realGB != null ? s.realGB.toFixed(1) : Math.round(s.v * pc.disk.total / 100)} GB`} />
               ))}
             </div>
             <div className="diskcard__legend mono">
-              <span><i style={{ background: 'var(--line-strong)' }} /> Sistema</span>
-              <span><i style={{ background: 'var(--accent)' }} /> Jogos & apps</span>
-              <span><i style={{ background: 'var(--accent-2)' }} /> Outros</span>
-              <span><i style={{ background: 'var(--warning)' }} /> Temp & cache{tempGB > 0 ? ` · ${tempGB.toFixed(1)} GB` : ''} <strong>↑ pode limpar</strong></span>
+              <span><i style={{ background: 'var(--line-strong)' }} /> {t('hero.diskSystem')}</span>
+              <span><i style={{ background: 'var(--accent)' }} /> {t('hero.diskGames')}</span>
+              <span><i style={{ background: 'var(--accent-2)' }} /> {t('hero.diskOther')}</span>
+              <span><i style={{ background: 'var(--warning)' }} /> {t('hero.diskTemp')}{tempGB > 0 ? ` · ${tempGB.toFixed(1)} GB` : ''} <strong>↑ {t('hero.diskCanClean')}</strong></span>
             </div>
           </>
         )}
@@ -261,40 +264,40 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
 
       {/* 6. quick actions + recent */}
       <div className="hero__bottom">
-        <TickFrame className="quickjump" label="ATALHOS" code="JUMP">
+        <TickFrame className="quickjump" label={t('hero.shortcuts')} code="JUMP">
           <div className="quickjump__grid">
             <button className="qaction" onClick={() => onNav('gaming')}>
               <Icon name="gamepad" size={18} />
               <div>
                 <div className="qaction__t">Gaming Boost</div>
-                <div className="qaction__s mono">{CATEGORIES.find(c => c.id === 'gaming')?.count} tweaks</div>
+                <div className="qaction__s mono">{CATEGORIES.find(c => c.id === 'gaming')?.count} {t('hero.tweaks')}</div>
               </div>
             </button>
             <button className="qaction" onClick={() => onNav('limpeza')}>
               <Icon name="trash" size={18} />
               <div>
-                <div className="qaction__t">Limpeza</div>
-                <div className="qaction__s mono">{CATEGORIES.find(c => c.id === 'limpeza')?.count} rotinas</div>
+                <div className="qaction__t">{t('nav.limpeza')}</div>
+                <div className="qaction__s mono">{CATEGORIES.find(c => c.id === 'limpeza')?.count} {t('hero.routines')}</div>
               </div>
             </button>
             <button className="qaction" onClick={() => onNav('tweaks')}>
               <Icon name="sliders" size={18} />
               <div>
                 <div className="qaction__t">Tweaks</div>
-                <div className="qaction__s mono">{CATEGORIES.find(c => c.id === 'tweaks')?.count} ajustes</div>
+                <div className="qaction__s mono">{CATEGORIES.find(c => c.id === 'tweaks')?.count} {t('hero.adjustments')}</div>
               </div>
             </button>
             <button className="qaction" onClick={() => onNav('hardware')}>
               <Icon name="cpu" size={18} />
               <div>
                 <div className="qaction__t">Hardware</div>
-                <div className="qaction__s mono">specs completas</div>
+                <div className="qaction__s mono">{t('hero.fullSpecs')}</div>
               </div>
             </button>
           </div>
         </TickFrame>
 
-        <TickFrame className="recent" label="ATIVIDADE RECENTE" code="LOG">
+        <TickFrame className="recent" label={t('hero.recentActivity')} code="LOG">
           <ul className="recent__list">
             {history.slice(0, 4).map(h => (
               <li key={h.id} className="recent__row">
@@ -306,7 +309,7 @@ export function Hero({ pc, pcLoading, score, onNav, onRunOneClick, history, bulk
             ))}
           </ul>
           <button className="recent__more" onClick={() => onNav('historico')}>
-            Ver historico completo <Icon name="chevron" size={12} />
+            {t('hero.viewHistory')} <Icon name="chevron" size={12} />
           </button>
         </TickFrame>
       </div>

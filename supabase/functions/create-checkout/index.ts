@@ -20,7 +20,7 @@
  */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import Stripe from 'https://esm.sh/stripe@14?target=deno';
+import Stripe from 'https://esm.sh/stripe@17?target=deno';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -43,7 +43,7 @@ serve(async (req: Request) => {
     }
 
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
-      apiVersion: '2023-10-16',
+      apiVersion: '2025-06-30.basil' as any,
       httpClient: Stripe.createFetchHttpClient(),
     });
 
@@ -107,7 +107,7 @@ serve(async (req: Request) => {
 
     // Build checkout session params
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
-      mode: plan === 'mensal' ? 'subscription' : 'payment', // anual = one-time payment
+      mode: 'subscription', // both mensal and anual are recurring
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: successUrl,

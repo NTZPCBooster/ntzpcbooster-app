@@ -1,18 +1,21 @@
 import { TickFrame } from './primitives';
 import { HistoryEntry } from '../types';
+import { useI18n } from '../i18n';
 
 interface HistoryPageProps {
   history: HistoryEntry[];
 }
 
 export function HistoryPage({ history }: HistoryPageProps) {
+  const { t } = useI18n();
+
   return (
     <section className="optlist-page">
       <header className="optlist-page__head">
         <div>
-          <div className="mono optlist-page__eyebrow">— SEÇÃO LOG</div>
-          <h1 className="optlist-page__title">Histórico</h1>
-          <p className="optlist-page__sub">Tudo que a gente já fez nessa máquina.</p>
+          <div className="mono optlist-page__eyebrow">— {t('history.sectionLabel')}</div>
+          <h1 className="optlist-page__title">{t('history.title')}</h1>
+          <p className="optlist-page__sub">{t('history.subtitle')}</p>
         </div>
       </header>
 

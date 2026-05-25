@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { Logo, Icon } from './primitives';
 import { getMotherboardId, validateKey, storeLicense } from '../lib/license';
 import type { LicenseInfo } from '../lib/license';
+import { useI18n } from '../i18n';
 
 interface ActivationPageProps {
   onActivated: (license: LicenseInfo) => void;
 }
 
 export function ActivationPage({ onActivated }: ActivationPageProps) {
+  const { t } = useI18n();
   const [key, setKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,10 +24,10 @@ export function ActivationPage({ onActivated }: ActivationPageProps) {
         setMoboLoading(false);
       })
       .catch(err => {
-        setError(`Erro ao identificar hardware: ${err.message}`);
+        setError(t('activation.hwError', { msg: err.message }));
         setMoboLoading(false);
       });
-  }, []);
+  }, [t]);
 
   // Format key as XXXXX-XXXXX-XXXXX-XXXXX
   const handleKeyChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,13 +39,13 @@ export function ActivationPage({ onActivated }: ActivationPageProps) {
 
   const handleActivate = useCallback(async () => {
     if (!moboId) {
-      setError('Aguarde a identificacao do hardware...');
+      setError(t('activation.waitHw'));
       return;
     }
 
     const clean = key.replace(/-/g, '');
     if (clean.length < 16) {
-      setError('Chave muito curta. O formato e XXXXX-XXXXX-XXXXX-XXXXX.');
+      setError(t('activation.tooShort'));
       return;
     }
 
@@ -56,14 +58,14 @@ export function ActivationPage({ onActivated }: ActivationPageProps) {
         storeLicense(result.data);
         onActivated(result.data);
       } else {
-        setError(result.error || 'Chave invalida.');
+        setError(result.error || t('activation.invalid'));
       }
     } catch {
-      setError('Erro inesperado. Tente novamente.');
+      setError(t('activation.unexpected'));
     } finally {
       setLoading(false);
     }
-  }, [key, moboId, onActivated]);
+  }, [key, moboId, onActivated, t]);
 
   const openBuyPage = useCallback(async () => {
     const url = 'https://pcboost.com.br';
@@ -82,11 +84,11 @@ export function ActivationPage({ onActivated }: ActivationPageProps) {
         <div className="activation__header">
           <Logo size={44} />
           <h1 className="activation__title">PCBOOST</h1>
-          <p className="activation__sub">Ative sua licenca para desbloquear todas as otimizacoes</p>
+          <p className="activation__sub">{t('activation.subtitle')}</p>
         </div>
 
         <div className="activation__field">
-          <label className="activation__label mono">CHAVE DE ATIVACAO</label>
+          <label className="activation__label mono">{t('activation.label')}</label>
           <input
             className="activation__input mono"
             type="text"
@@ -113,21 +115,21 @@ export function ActivationPage({ onActivated }: ActivationPageProps) {
           disabled={loading || moboLoading}
         >
           {loading ? (
-            <>Validando...</>
+            <>{t('activation.validating')}</>
           ) : (
             <>
               <Icon name="shield" size={16} />
-              Ativar PCBoost
+              {t('activation.activate')}
             </>
           )}
         </button>
 
         <div className="activation__divider">
-          <span>ou</span>
+          <span>{t('activation.or')}</span>
         </div>
 
         <button className="btn btn--ghost activation__buy" onClick={openBuyPage}>
-          Comprar uma licenca <Icon name="external" size={14} />
+          {t('activation.buy')} <Icon name="external" size={14} />
         </button>
 
         {moboId && (
@@ -138,7 +140,7 @@ export function ActivationPage({ onActivated }: ActivationPageProps) {
       </div>
 
       <p className="activation__foot mono">
-        PCBoost v1.0.0 — Precisa de ajuda? suporte@pcboost.com.br
+        {t('activation.footer')}
       </p>
     </div>
   );

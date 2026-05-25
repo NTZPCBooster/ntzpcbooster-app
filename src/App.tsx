@@ -18,6 +18,10 @@ import { useStartupItems } from "./hooks/useStartupItems";
 import { useStorageInfo } from "./hooks/useStorageInfo";
 import { useNotify } from "./hooks/useNotify";
 import { useConfigIO } from "./hooks/useConfigIO";
+import { useScheduler, DEFAULT_SCHEDULER } from "./hooks/useScheduler";
+import type { SchedulerConfig } from "./hooks/useScheduler";
+import { I18nProvider } from "./i18n";
+import type { Locale } from "./i18n";
 import { getLicense, checkStoredLicense } from "./lib/license";
 import type { LicenseInfo } from "./lib/license";
 import { STORAGE_KEY } from "./constants";
@@ -31,9 +35,12 @@ interface PersistedState {
   density: string;
   grid: boolean;
   minimizeToTray: boolean;
+  locale: Locale;
   applied: Record<string, boolean>;
   history: HistoryEntry[];
   lastRan: Record<string, string>; // id → ISO timestamp of last execution
+  scheduler: SchedulerConfig;
+  lastScheduledRun: string | null; // ISO date of last scheduled cleanup
 }
 
 function loadPersisted(): Partial<PersistedState> {
@@ -87,11 +94,14 @@ function App() {
   const [density, setDensity] = useState<string>(persisted.current.density || "cozy");
   const [grid, setGrid] = useState<boolean>(persisted.current.grid ?? true);
   const [minimizeToTray, setMinimizeToTray] = useState<boolean>(persisted.current.minimizeToTray ?? true);
+  const [locale, setLocale] = useState<Locale>((persisted.current as any).locale || 'pt');
   const [showAppearance, setShowAppearance] = useState(false);
   const [applied, setApplied] = useState<Record<string, boolean>>(persisted.current.applied || {});
   const [toast, setToast] = useState<{ msg: string; kind: string; id: number } | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>(persisted.current.history || HISTORY);
   const [lastRan, setLastRan] = useState<Record<string, string>>(persisted.current.lastRan || {});
+  const [scheduler, setScheduler] = useState<SchedulerConfig>(persisted.current.scheduler || DEFAULT_SCHEDULER);
+  const [lastScheduledRun, setLastScheduledRun] = useState<string | null>(persisted.current.lastScheduledRun || null);
 
   // Loading / running states
   const [running, setRunning] = useState<Set<string>>(new Set());
@@ -131,8 +141,11 @@ function App() {
     if (state.density) setDensity(state.density as string);
     if (state.grid != null) setGrid(state.grid as boolean);
     if (state.minimizeToTray != null) setMinimizeToTray(state.minimizeToTray as boolean);
+    if (state.locale) setLocale(state.locale as Locale);
     if (state.applied) setApplied(state.applied as Record<string, boolean>);
     if (state.lastRan) setLastRan(state.lastRan as Record<string, string>);
+    if (state.scheduler) setScheduler(state.scheduler as SchedulerConfig);
+    if (state.lastScheduledRun !== undefined) setLastScheduledRun(state.lastScheduledRun as string | null);
   }, []);
   const { exportConfig, importConfig } = useConfigIO(handleConfigImported, showToast);
 
@@ -162,8 +175,8 @@ function App() {
 
   // Persist state on change
   useEffect(() => {
-    savePersisted({ theme, accent, density, grid, minimizeToTray, applied, history, lastRan });
-  }, [theme, accent, density, grid, minimizeToTray, applied, history, lastRan]);
+    savePersisted({ theme, accent, density, grid, minimizeToTray, locale, applied, history, lastRan, scheduler, lastScheduledRun });
+  }, [theme, accent, density, grid, minimizeToTray, locale, applied, history, lastRan, scheduler, lastScheduledRun]);
 
   // Apply theme / accent / density / grid to root
   useEffect(() => {
@@ -301,6 +314,33 @@ function App() {
     },
     [executeScript, showToast, addHistory, notify, remeasureStorage]
   );
+
+  // ── Scheduled cleanup ──
+  const scheduledCleanup = useCallback(async (ids: string[]) => {
+    for (const id of ids) {
+      const opt = OPTIMIZATIONS.find(o => o.id === id);
+      if (!opt) continue;
+      try {
+        await executeScript(opt);
+      } catch { /* continue on error */ }
+    }
+    const now = new Date().toISOString();
+    setLastRan(prev => {
+      const next = { ...prev };
+      ids.forEach(id => { next[id] = now; });
+      return next;
+    });
+    addHistory("Limpeza Agendada", "limpeza automática semanal", "limpeza");
+    notify("NTZ PCBooster", "Limpeza agendada concluída — espaço liberado no disco.");
+    remeasureStorage();
+  }, [executeScript, addHistory, notify, remeasureStorage]);
+
+  useScheduler({
+    config: scheduler,
+    lastScheduledRun,
+    onRun: scheduledCleanup,
+    onComplete: (iso) => setLastScheduledRun(iso),
+  });
 
   // ── Public toggle/apply with risk confirmation ──
   const toggle = useCallback(
@@ -583,25 +623,30 @@ function App() {
   // ── License gate render ──
   if (licensed === null) {
     return (
-      <div className="activation">
-        <div className="activation__bg" />
-        <div className="activation__loading mono">Verificando licenca...</div>
-      </div>
+      <I18nProvider locale={locale}>
+        <div className="activation">
+          <div className="activation__bg" />
+          <div className="activation__loading mono">Verificando licenca...</div>
+        </div>
+      </I18nProvider>
     );
   }
 
   if (!licensed) {
     return (
-      <ActivationPage
-        onActivated={(lic) => {
-          setLicense(lic);
-          setLicensed(true);
-        }}
-      />
+      <I18nProvider locale={locale}>
+        <ActivationPage
+          onActivated={(lic) => {
+            setLicense(lic);
+            setLicensed(true);
+          }}
+        />
+      </I18nProvider>
     );
   }
 
   return (
+    <I18nProvider locale={locale}>
     <div className="shell">
       <div className="shell__grid" aria-hidden="true" />
       <Sidebar
@@ -662,8 +707,13 @@ function App() {
         onGridChange={setGrid}
         minimizeToTray={minimizeToTray}
         onMinimizeToTrayChange={setMinimizeToTray}
+        locale={locale}
+        onLocaleChange={setLocale}
         onExport={exportConfig}
         onImport={importConfig}
+        scheduler={scheduler}
+        onSchedulerChange={setScheduler}
+        lastScheduledRun={lastScheduledRun}
       />
 
       <ConfirmDialog
@@ -676,6 +726,7 @@ function App() {
         onCancel={() => setPendingConfirm(null)}
       />
     </div>
+    </I18nProvider>
   );
 }
 

@@ -1521,6 +1521,45 @@ input { font-family: inherit; }
 }
 .ap-panel__actions .btn { flex: 1; justify-content: center; }
 
+/* Scheduler */
+.ap-scheduler {
+  margin-top: var(--s2);
+  padding: var(--s3);
+  background: var(--surface1);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+}
+.ap-scheduler__row {
+  display: flex; align-items: center; gap: var(--s3);
+  margin-bottom: var(--s2);
+}
+.ap-scheduler__label {
+  font-size: 12px; color: var(--fg2); min-width: 54px;
+}
+.ap-scheduler__select,
+.ap-scheduler__input {
+  flex: 1;
+  background: var(--surface0);
+  border: 1px solid var(--border);
+  border-radius: var(--r1);
+  color: var(--fg1);
+  font-size: 13px;
+  padding: 6px 10px;
+  outline: none;
+  font-family: inherit;
+}
+.ap-scheduler__select:focus,
+.ap-scheduler__input:focus {
+  border-color: var(--accent);
+}
+.ap-scheduler__hint {
+  font-size: 11px; color: var(--fg3); margin: var(--s2) 0 0; line-height: 1.4;
+}
+.ap-scheduler__last {
+  font-size: 11px; color: var(--accent); margin: var(--s1) 0 0;
+  font-family: var(--mono);
+}
+
 /* ════════════════════════════════════════════════════════════════
    SKELETON LOADING
    ════════════════════════════════════════════════════════════════ */

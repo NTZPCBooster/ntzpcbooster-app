@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Icon, Switch, Skeleton } from "./primitives";
 import { useStartupItems } from "../hooks/useStartupItems";
 import type { StartupItem } from "../hooks/useStartupItems";
+import { useI18n } from "../i18n";
 
 export function StartupPage() {
+  const { t } = useI18n();
   const { items, loading, error, reload, toggleItem } = useStartupItems();
   const [toggling, setToggling] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
@@ -17,7 +19,7 @@ export function StartupPage() {
 
   const handleToggle = async (item: StartupItem, val: boolean) => {
     if (item.location === "FOLDER") {
-      showToast("Itens da pasta Startup nao podem ser desativados por aqui", "error");
+      showToast(t('startup.folderError'), "error");
       return;
     }
 
@@ -26,9 +28,9 @@ export function StartupPage() {
 
     try {
       await toggleItem(item, val);
-      showToast(`${val ? "Ativado" : "Desativado"}: ${item.name}`);
+      showToast(t(val ? 'startup.enabled' : 'startup.disabled', { name: item.name }));
     } catch {
-      showToast(`Erro ao alterar: ${item.name}`, "error");
+      showToast(t('startup.toggleError', { name: item.name }), "error");
     } finally {
       setToggling(prev => {
         const next = new Set(prev);
@@ -54,23 +56,23 @@ export function StartupPage() {
     <section className="optlist-page">
       <header className="optlist-page__head">
         <div>
-          <div className="mono optlist-page__eyebrow">— SECAO D</div>
-          <h1 className="optlist-page__title">Inicializacao</h1>
+          <div className="mono optlist-page__eyebrow">— {t('startup.sectionLabel')}</div>
+          <h1 className="optlist-page__title">{t('startup.title')}</h1>
           <p className="optlist-page__sub">
-            Programas que abrem automaticamente quando o Windows inicia. Desative os que nao precisa pra bootar mais rapido.
+            {t('startup.subtitle')}
           </p>
         </div>
         <div className="optlist-page__stats mono">
           <div>
-            <div className="kv__k">TOTAL</div>
+            <div className="kv__k">{t('common.total')}</div>
             <div className="kv__big">{items.length.toString().padStart(2, "0")}</div>
           </div>
           <div>
-            <div className="kv__k">ATIVOS</div>
+            <div className="kv__k">{t('common.active')}</div>
             <div className="kv__big">{enabledCount.toString().padStart(2, "0")}</div>
           </div>
           <div>
-            <div className="kv__k">INATIVOS</div>
+            <div className="kv__k">{t('common.inactive')}</div>
             <div className="kv__big">{inactiveCount.toString().padStart(2, "0")}</div>
           </div>
         </div>
@@ -81,17 +83,17 @@ export function StartupPage() {
           <Icon name="search" size={14} />
           <input
             type="text"
-            placeholder="Buscar programa..."
+            placeholder={t('startup.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <div className="filters mono">
           {[
-            { id: "all", l: "Tudo" },
-            { id: "active", l: "Ativos" },
-            { id: "inactive", l: "Inativos" },
-            { id: "system", l: "Sistema" },
+            { id: "all", l: t('startup.filterAll') },
+            { id: "active", l: t('startup.filterActive') },
+            { id: "inactive", l: t('startup.filterInactive') },
+            { id: "system", l: t('startup.filterSystem') },
           ].map(f => (
             <button
               key={f.id}
@@ -101,7 +103,7 @@ export function StartupPage() {
               {f.l}
             </button>
           ))}
-          <button className="chip" onClick={reload} title="Recarregar lista">
+          <button className="chip" onClick={reload} title={t('startup.reload')}>
             <Icon name="refresh" size={12} />
           </button>
         </div>
@@ -133,7 +135,7 @@ export function StartupPage() {
           <Icon name="alert" size={24} />
           <span>{error}</span>
           <button className="btn btn--ghost btn--small" onClick={reload}>
-            <Icon name="refresh" size={12} /> Tentar novamente
+            <Icon name="refresh" size={12} /> {t('startup.retry')}
           </button>
         </div>
       )}
@@ -141,7 +143,7 @@ export function StartupPage() {
       {!loading && !error && items.length === 0 && (
         <div className="startup-empty mono">
           <Icon name="check" size={24} />
-          <span>Nenhum programa de inicializacao encontrado</span>
+          <span>{t('startup.empty')}</span>
         </div>
       )}
 
@@ -175,7 +177,7 @@ export function StartupPage() {
                     <div className="optrow__head">
                       <span className="optrow__title">{item.name}</span>
                       {item.location === "HKLM" && (
-                        <span className="badge badge--admin mono">SISTEMA</span>
+                        <span className="badge badge--admin mono">{t('common.system')}</span>
                       )}
                       <span className="badge badge--risk badge--risk-nenhum">
                         {item.source}
@@ -190,10 +192,10 @@ export function StartupPage() {
                         <span className="mono spinner-label">...</span>
                       </div>
                     ) : isFolder ? (
-                      <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)" }}>atalho</span>
+                      <span className="mono" style={{ fontSize: 11, color: "var(--text-muted)" }}>{t('common.shortcut')}</span>
                     ) : (
                       <div className="optrow__switch">
-                        <span className="mono switch-label">{item.enabled ? "ON" : "OFF"}</span>
+                        <span className="mono switch-label">{item.enabled ? t('common.on') : t('common.off')}</span>
                         <Switch
                           on={item.enabled}
                           onChange={(val) => handleToggle(item, val)}
@@ -211,7 +213,7 @@ export function StartupPage() {
 
       {!loading && filtered.length === 0 && items.length > 0 && (
         <ul className="optlist">
-          <li className="optlist__empty mono">— sem resultados</li>
+          <li className="optlist__empty mono">{t('common.noResults')}</li>
         </ul>
       )}
 

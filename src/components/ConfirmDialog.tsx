@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Icon } from './primitives';
+import { useI18n } from '../i18n';
 
 interface SelectableItem {
   label: string;
@@ -19,6 +20,7 @@ interface ConfirmDialogProps {
 export function ConfirmDialog({
   open, title, description, risk, selectableList, onConfirm, onCancel,
 }: ConfirmDialogProps) {
+  const { t } = useI18n();
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   // All checked by default when dialog opens
@@ -75,14 +77,14 @@ export function ConfirmDialog({
           <div className="confirm-dialog__list">
             <div className="confirm-dialog__list-header">
               <span className="confirm-dialog__list-label mono">
-                {selected.size} de {selectableList.length} selecionados
+                {t('confirm.selected', { count: String(selected.size), total: String(selectableList.length) })}
               </span>
               <button
                 type="button"
                 className="confirm-dialog__list-toggle mono"
                 onClick={toggleAll}
               >
-                {allChecked ? 'Desmarcar todos' : 'Marcar todos'}
+                {allChecked ? t('confirm.uncheckAll') : t('confirm.checkAll')}
               </button>
             </div>
             <ul className="confirm-dialog__list-items mono">
@@ -103,18 +105,20 @@ export function ConfirmDialog({
         )}
 
         <div className="confirm-dialog__meta mono">
-          <span className={`badge badge--risk badge--risk-${risk}`}>risco: {risk}</span>
-          <span>Esta acao pode afetar seguranca ou estabilidade.</span>
+          <span className={`badge badge--risk badge--risk-${risk}`}>{t('optlist.risk')}: {t(`risk.${risk}`)}</span>
+          <span>{t('confirm.warning')}</span>
         </div>
         <div className="confirm-dialog__actions">
-          <button className="btn btn--ghost" onClick={onCancel}>Cancelar</button>
+          <button className="btn btn--ghost" onClick={onCancel}>{t('common.cancel')}</button>
           <button
             className="btn btn--warning"
             onClick={handleConfirm}
             disabled={selectableList ? noneChecked : false}
           >
             <Icon name="alert" size={14} />
-            {selectableList ? `Remover ${selected.size} app${selected.size !== 1 ? 's' : ''}` : 'Confirmar mesmo assim'}
+            {selectableList
+              ? t('confirm.removeApps', { count: String(selected.size) })
+              : t('confirm.confirmAnyway')}
           </button>
         </div>
       </div>

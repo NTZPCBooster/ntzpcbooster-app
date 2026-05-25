@@ -5,6 +5,7 @@
  * When running, shows a progress bar with step count and percentage.
  */
 import { Icon } from '../primitives';
+import { useI18n } from '../../i18n';
 
 export interface BulkProgress {
   done: number;
@@ -19,6 +20,7 @@ interface OneClickBarProps {
 }
 
 export function OneClickBar({ onRun, bulkRunning, bulkProgress }: OneClickBarProps) {
+  const { t } = useI18n();
   const boostActive = bulkRunning === 'boost';
   const cleanActive = bulkRunning === 'clean';
   const anyRunning = bulkRunning !== null;
@@ -35,13 +37,13 @@ export function OneClickBar({ onRun, bulkRunning, bulkProgress }: OneClickBarPro
           {boostActive ? <div className="spinner spinner--lg" /> : <Icon name="rocket" size={22} />}
         </div>
         <div className="oneclick__body">
-          <div className="oneclick__title">Boost Completo</div>
+          <div className="oneclick__title">{t('oneclick.boostTitle')}</div>
           <div className="oneclick__sub">
             {boostActive && bulkProgress
-              ? `${bulkProgress.done + 1} de ${bulkProgress.total} · ${bulkProgress.current}`
+              ? t('oneclick.progress', { done: String(bulkProgress.done + 1), total: String(bulkProgress.total), current: bulkProgress.current })
               : boostActive
-                ? 'Aplicando otimizacoes…'
-                : 'Aplica todas as otimizacoes de gaming numa tacada so. Reversivel.'}
+                ? t('oneclick.boostRunning')
+                : t('oneclick.boostDesc')}
           </div>
           {boostActive && bulkProgress && (
             <div className="oneclick__progress">
@@ -49,7 +51,7 @@ export function OneClickBar({ onRun, bulkRunning, bulkProgress }: OneClickBarPro
             </div>
           )}
         </div>
-        <div className="oneclick__cta mono">{boostActive ? `${pct}%` : 'EXECUTAR ↗'}</div>
+        <div className="oneclick__cta mono">{boostActive ? `${pct}%` : t('oneclick.cta')}</div>
       </button>
 
       <button
@@ -61,13 +63,13 @@ export function OneClickBar({ onRun, bulkRunning, bulkProgress }: OneClickBarPro
           {cleanActive ? <div className="spinner spinner--lg" /> : <Icon name="trash" size={22} />}
         </div>
         <div className="oneclick__body">
-          <div className="oneclick__title">Limpeza Completa</div>
+          <div className="oneclick__title">{t('oneclick.cleanTitle')}</div>
           <div className="oneclick__sub">
             {cleanActive && bulkProgress
-              ? `${bulkProgress.done + 1} de ${bulkProgress.total} · ${bulkProgress.current}`
+              ? t('oneclick.progress', { done: String(bulkProgress.done + 1), total: String(bulkProgress.total), current: bulkProgress.current })
               : cleanActive
-                ? 'Limpando…'
-                : 'Faxina geral — temp, prefetch, cache, lixeira. Costuma liberar ~5 GB.'}
+                ? t('oneclick.cleanRunning')
+                : t('oneclick.cleanDesc')}
           </div>
           {cleanActive && bulkProgress && (
             <div className="oneclick__progress">
@@ -75,7 +77,7 @@ export function OneClickBar({ onRun, bulkRunning, bulkProgress }: OneClickBarPro
             </div>
           )}
         </div>
-        <div className="oneclick__cta mono">{cleanActive ? `${pct}%` : 'EXECUTAR ↗'}</div>
+        <div className="oneclick__cta mono">{cleanActive ? `${pct}%` : t('oneclick.cta')}</div>
       </button>
     </div>
   );

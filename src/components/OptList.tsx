@@ -3,17 +3,21 @@ import { Icon, Switch } from './primitives';
 import { Optimization } from '../types';
 import { formatSize } from '../hooks/useStorageInfo';
 import type { StorageSizes } from '../hooks/useStorageInfo';
+import { useI18n } from '../i18n';
 
-/** Format an ISO timestamp into a relative "há X" string. */
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'agora';
-  if (mins < 60) return `há ${mins} min`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `há ${hrs}h`;
-  const days = Math.floor(hrs / 24);
-  return `há ${days}d`;
+/** Format an ISO timestamp into a relative string using i18n. */
+function useTimeAgo() {
+  const { t } = useI18n();
+  return (iso: string): string => {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60_000);
+    if (mins < 1) return t('common.now');
+    if (mins < 60) return t('common.minsAgo', { mins: String(mins) });
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return t('common.hrsAgo', { hrs: String(hrs) });
+    const days = Math.floor(hrs / 24);
+    return t('common.daysAgo', { days: String(days) });
+  };
 }
 
 // ─────────────── OPTIMIZATION ROW ───────────────
@@ -31,22 +35,33 @@ interface OptimizationRowProps {
 }
 
 function OptimizationRow({ item, applied, onToggle, onApply, expanded, onToggleExpand, isRunning, lastRanAt, isWin11, sizeMB }: OptimizationRowProps) {
+  const { t } = useI18n();
+  const timeAgo = useTimeAgo();
   const isToggle = !item.runOnce;
   const isLocked = !!(isWin11 && item.win11Note);
+
+  // Try translated strings, fall back to item.title/short/long for compatibility
+  const title = t(`opt.${item.id}.title`) !== `opt.${item.id}.title` ? t(`opt.${item.id}.title`) : item.title;
+  const short = t(`opt.${item.id}.short`) !== `opt.${item.id}.short` ? t(`opt.${item.id}.short`) : item.short;
+  const long = t(`opt.${item.id}.long`) !== `opt.${item.id}.long` ? t(`opt.${item.id}.long`) : item.long;
+  const win11Note = item.win11Note
+    ? (t(`opt.${item.id}.win11Note`) !== `opt.${item.id}.win11Note` ? t(`opt.${item.id}.win11Note`) : item.win11Note)
+    : undefined;
+
   return (
     <li className={`optrow ${expanded ? 'is-open' : ''} ${applied ? 'is-applied' : ''} ${isRunning ? 'is-running' : ''}`}>
       <button className="optrow__main" onClick={onToggleExpand}>
         <div className="optrow__icon"><Icon name={item.icon} size={18} /></div>
         <div className="optrow__text">
           <div className="optrow__head">
-            <span className="optrow__title">{item.title}</span>
+            <span className="optrow__title">{title}</span>
             {item.admin && <span className="badge badge--admin mono">ADMIN</span>}
             <span className={`badge badge--risk badge--risk-${item.risk}`}>
-              risco: {item.risk}
+              {t('optlist.risk')}: {t(`risk.${item.risk}`)}
             </span>
           </div>
           <div className="optrow__short">
-            {item.short}
+            {short}
             {sizeMB != null && sizeMB > 0 && (
               <span className="optrow__size mono"> — {formatSize(sizeMB)}</span>
             )}
@@ -58,7 +73,7 @@ function OptimizationRow({ item, applied, onToggle, onApply, expanded, onToggleE
         <div className="optrow__action" onClick={(e) => e.stopPropagation()}>
           {isLocked ? (
             <div className="optrow__switch">
-              <span className="mono switch-label" style={{ opacity: 0.4 }}>N/A</span>
+              <span className="mono switch-label" style={{ opacity: 0.4 }}>{t('common.na')}</span>
               <Switch on={false} onChange={() => {}} disabled />
             </div>
           ) : isRunning ? (
@@ -68,7 +83,7 @@ function OptimizationRow({ item, applied, onToggle, onApply, expanded, onToggleE
             </div>
           ) : isToggle ? (
             <div className="optrow__switch">
-              <span className="mono switch-label">{applied ? 'ON' : 'OFF'}</span>
+              <span className="mono switch-label">{applied ? t('common.on') : t('common.off')}</span>
               <Switch on={applied} onChange={onToggle} />
             </div>
           ) : (
@@ -79,7 +94,7 @@ function OptimizationRow({ item, applied, onToggle, onApply, expanded, onToggleE
                 </span>
               )}
               <button className="btn btn--ghost btn--small" onClick={onApply}>
-                <Icon name="rocket" size={12} /> executar
+                <Icon name="rocket" size={12} /> {t('common.run')}
               </button>
             </div>
           )}
@@ -89,19 +104,19 @@ function OptimizationRow({ item, applied, onToggle, onApply, expanded, onToggleE
         <div className="optrow__detail">
           <div className="optrow__detail-text">
             <Icon name="info" size={14} />
-            <p>{item.long}</p>
+            <p>{long}</p>
           </div>
           {isLocked ? (
             <div className="optrow__detail-meta optrow__detail-meta--warn mono">
-              <span>⚠ {item.win11Note}</span>
+              <span>⚠ {win11Note}</span>
             </div>
           ) : (
             <div className="optrow__detail-meta mono">
-              {item.admin && <span>↳ Requer privilégios de administrador</span>}
+              {item.admin && <span>↳ {t('optlist.requiresAdmin')}</span>}
               {isToggle ? (
-                <span>↳ Reversível a qualquer momento — basta desligar.</span>
+                <span>↳ {t('optlist.reversible')}</span>
               ) : (
-                <span>↳ Ação única, não há "desfazer".</span>
+                <span>↳ {t('optlist.oneTime')}</span>
               )}
             </div>
           )}
@@ -131,6 +146,7 @@ interface OptListProps {
 }
 
 export function OptList({ items, applied, onToggle, onApply, onBulkToggle, title, subtitle, code, running, bulkRunning, lastRan, isWin11, storageSizes, storageTotalMB }: OptListProps) {
+  const { t } = useI18n();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
@@ -154,24 +170,24 @@ export function OptList({ items, applied, onToggle, onApply, onBulkToggle, title
     <section className="optlist-page">
       <header className="optlist-page__head">
         <div>
-          <div className="mono optlist-page__eyebrow">— SEÇÃO {code}</div>
+          <div className="mono optlist-page__eyebrow">— {t('optlist.section')} {code}</div>
           <h1 className="optlist-page__title">{title}</h1>
           <p className="optlist-page__sub">{subtitle}</p>
           {storageTotalMB != null && storageTotalMB > 0 && (
-            <p className="optlist-page__storage-hint mono">Espaco recuperavel: <strong>{formatSize(storageTotalMB)}</strong></p>
+            <p className="optlist-page__storage-hint mono">{t('optlist.recoverable')}: <strong>{formatSize(storageTotalMB)}</strong></p>
           )}
         </div>
         <div className="optlist-page__stats mono">
           <div>
-            <div className="kv__k">TOTAL</div>
+            <div className="kv__k">{t('common.total')}</div>
             <div className="kv__big">{items.length.toString().padStart(2, '0')}</div>
           </div>
           <div>
-            <div className="kv__k">ATIVOS</div>
+            <div className="kv__k">{t('common.active')}</div>
             <div className="kv__big">{onCount.toString().padStart(2, '0')}</div>
           </div>
           <div>
-            <div className="kv__k">INATIVOS</div>
+            <div className="kv__k">{t('common.inactive')}</div>
             <div className="kv__big">{(items.length - onCount).toString().padStart(2, '0')}</div>
           </div>
         </div>
@@ -185,7 +201,7 @@ export function OptList({ items, applied, onToggle, onApply, onBulkToggle, title
             onClick={() => onBulkToggle(true)}
           >
             <Icon name="check" size={13} />
-            Ativar todos ({toggleableItems.length - toggleableOnCount})
+            {t('optlist.enableAll')} ({toggleableItems.length - toggleableOnCount})
           </button>
           <button
             className="btn btn--ghost btn--small"
@@ -193,7 +209,7 @@ export function OptList({ items, applied, onToggle, onApply, onBulkToggle, title
             onClick={() => onBulkToggle(false)}
           >
             <Icon name="x" size={13} />
-            Desativar todos ({toggleableOnCount})
+            {t('optlist.disableAll')} ({toggleableOnCount})
           </button>
         </div>
       )}
@@ -202,16 +218,16 @@ export function OptList({ items, applied, onToggle, onApply, onBulkToggle, title
         <div className="search">
           <Icon name="search" size={14} />
           <input
-            type="text" placeholder="Buscar otimização…"
+            type="text" placeholder={t('optlist.searchPlaceholder')}
             value={search} onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <div className="filters mono">
           {[
-            { id: 'all', l: 'Tudo' },
-            { id: 'safe', l: 'Sem risco' },
-            { id: 'admin', l: 'Requer admin' },
-            { id: 'applied', l: 'Aplicados' },
+            { id: 'all', l: t('optlist.filterAll') },
+            { id: 'safe', l: t('optlist.filterSafe') },
+            { id: 'admin', l: t('optlist.filterAdmin') },
+            { id: 'applied', l: t('optlist.filterApplied') },
           ].map(f => (
             <button key={f.id} className={`chip ${filter === f.id ? 'is-on' : ''}`} onClick={() => setFilter(f.id)}>
               {f.l}
@@ -222,7 +238,7 @@ export function OptList({ items, applied, onToggle, onApply, onBulkToggle, title
 
       <ul className="optlist">
         {filtered.length === 0 && (
-          <li className="optlist__empty mono">— sem resultados</li>
+          <li className="optlist__empty mono">{t('common.noResults')}</li>
         )}
         {filtered.map(it => (
           <OptimizationRow

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Icon } from "./primitives";
+import { useI18n } from "../i18n";
 
 type UpdateStatus = "idle" | "checking" | "available" | "downloading" | "ready" | "error";
 
@@ -9,6 +10,7 @@ interface UpdateInfo {
 }
 
 export function UpdateChecker() {
+  const { t } = useI18n();
   const [status, setStatus] = useState<UpdateStatus>("idle");
   const [info, setInfo] = useState<UpdateInfo | null>(null);
   const [progress, setProgress] = useState<number>(0);
@@ -98,15 +100,15 @@ export function UpdateChecker() {
           <div className="updater-banner__info">
             <Icon name="arrow-circle-up" size={18} />
             <span>
-              Nova versao disponivel: <strong>v{info?.version}</strong>
+              {t('update.available', { version: info?.version || '' })}
             </span>
           </div>
           <div className="updater-banner__actions">
             <button className="updater-banner__btn updater-banner__btn--update" onClick={handleUpdate}>
-              Atualizar agora
+              {t('update.now')}
             </button>
             <button className="updater-banner__btn updater-banner__btn--dismiss" onClick={() => setDismissed(true)}>
-              Depois
+              {t('update.later')}
             </button>
           </div>
         </>
@@ -115,7 +117,7 @@ export function UpdateChecker() {
       {status === "downloading" && (
         <div className="updater-banner__info">
           <Icon name="spinner" size={18} />
-          <span>Baixando atualização... {progress > 0 ? `${progress}%` : ""}</span>
+          <span>{t('update.downloading')} {progress > 0 ? `${progress}%` : ""}</span>
           <div className="updater-banner__progress">
             <div className="updater-banner__progress-bar" style={{ width: `${progress}%` }} />
           </div>
@@ -125,14 +127,14 @@ export function UpdateChecker() {
       {status === "ready" && (
         <div className="updater-banner__info">
           <Icon name="check-circle" size={18} />
-          <span>Atualização instalada! Reiniciando...</span>
+          <span>{t('update.ready')}</span>
         </div>
       )}
 
       {status === "error" && (
         <div className="updater-banner__info updater-banner__info--error">
           <Icon name="alert" size={18} />
-          <span>Erro ao atualizar. Tente novamente mais tarde.</span>
+          <span>{t('update.error')}</span>
         </div>
       )}
     </div>

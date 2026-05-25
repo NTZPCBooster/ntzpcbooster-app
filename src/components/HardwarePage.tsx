@@ -1,5 +1,6 @@
 import { TickFrame } from './primitives';
 import { PCInfo } from '../types';
+import { useI18n } from '../i18n';
 
 interface HardwarePageProps {
   pc: PCInfo;
@@ -7,31 +8,32 @@ interface HardwarePageProps {
 }
 
 export function HardwarePage({ pc, loading: _loading }: HardwarePageProps) {
+  const { t } = useI18n();
   const usedPct = pc.disk.total ? Math.round(((pc.disk.total - pc.disk.free) / pc.disk.total) * 100) : 0;
 
   const cards: Array<{ label: string; k: string; name: string; lines: string[]; highlight?: boolean }> = [
     {
-      label: 'PROCESSADOR',
+      label: t('hw.cpu'),
       k: '01',
       name: pc.cpu.model,
       lines: [
-        `${pc.cpu.cores} núcleos físicos, ${pc.cpu.threads} threads`,
-        `${pc.cpu.baseClock} GHz base · ${pc.cpu.boostClock} GHz boost`,
+        t('hw.cpuCores', { cores: String(pc.cpu.cores), threads: String(pc.cpu.threads) }),
+        t('hw.cpuClock', { base: String(pc.cpu.baseClock), boost: String(pc.cpu.boostClock) }),
       ],
     },
     {
-      label: 'PLACA DE VÍDEO',
+      label: t('hw.gpu'),
       k: '02',
       name: pc.gpu.model,
       lines: [
-        `${pc.gpu.vram} GB VRAM`,
-        `Driver atual ${pc.gpu.driver}`,
-        pc.gpu.driverUpdateAvailable ? `↑ Atualização disponível: ${pc.gpu.latestDriver}` : 'Driver atualizado',
+        t('hw.gpuVram', { vram: String(pc.gpu.vram) }),
+        t('hw.gpuDriver', { driver: pc.gpu.driver }),
+        pc.gpu.driverUpdateAvailable ? t('hw.gpuUpdate', { version: pc.gpu.latestDriver }) : t('hw.gpuUpToDate'),
       ],
       highlight: pc.gpu.driverUpdateAvailable,
     },
     {
-      label: 'MEMÓRIA',
+      label: t('hw.ram'),
       k: '03',
       name: `${pc.ram.total} GB ${pc.ram.type}`,
       lines: [
@@ -39,22 +41,22 @@ export function HardwarePage({ pc, loading: _loading }: HardwarePageProps) {
       ],
     },
     {
-      label: 'PLACA-MÃE',
+      label: t('hw.mobo'),
       k: '04',
       name: pc.mobo,
       lines: [],
     },
     {
-      label: 'ARMAZENAMENTO',
+      label: t('hw.storage'),
       k: '05',
       name: `${pc.disk.total} GB ${pc.disk.type}`,
       lines: [
-        `${pc.disk.free} GB livres em ${pc.disk.letter}:`,
-        `${usedPct}% ocupado`,
+        t('hw.diskFree', { free: String(pc.disk.free), letter: pc.disk.letter }),
+        t('hw.diskUsed', { pct: String(usedPct) }),
       ],
     },
     {
-      label: 'SISTEMA',
+      label: t('hw.system'),
       k: '06',
       name: pc.os,
       lines: [
@@ -68,9 +70,9 @@ export function HardwarePage({ pc, loading: _loading }: HardwarePageProps) {
     <section className="optlist-page">
       <header className="optlist-page__head">
         <div>
-          <div className="mono optlist-page__eyebrow">— SEÇÃO H/W</div>
+          <div className="mono optlist-page__eyebrow">— {t('hw.sectionLabel')}</div>
           <h1 className="optlist-page__title">Hardware</h1>
-          <p className="optlist-page__sub">Cada peça da sua máquina, e o que ela está fazendo.</p>
+          <p className="optlist-page__sub">{t('hw.subtitle')}</p>
         </div>
       </header>
 
