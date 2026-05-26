@@ -380,9 +380,9 @@ export default {
   'opt.dynamic-tick.short': 'Less micro-stutter in games',
   'opt.dynamic-tick.long': 'Windows skips internal clock ticks to save energy, causing micro-hesitations. Disabling forces a constant tick — CPU responds at a steady rhythm. Requires restart.',
 
-  'opt.nvidia-opt.title': 'Optimize NVIDIA',
-  'opt.nvidia-opt.short': 'Disables telemetry, improves DPC',
-  'opt.nvidia-opt.long': 'Disables NVIDIA telemetry (stops sending usage data) and enables per-CPU-core GPU interrupt distribution, reducing latency. NVIDIA GPUs only.',
+  'opt.nv-opt.title': 'Optimize NVIDIA',
+  'opt.nv-opt.short': 'Disables telemetry, improves DPC',
+  'opt.nv-opt.long': 'Disables NVIDIA telemetry (stops sending usage data) and enables per-CPU-core GPU interrupt distribution, reducing latency. NVIDIA GPUs only.',
 
   // Cleanup optimizations
   'opt.temp-files.title': 'Temporary Files',

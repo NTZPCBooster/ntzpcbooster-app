@@ -67,7 +67,7 @@ const DETECT_SCRIPT = [
   `$r['ntfs-8dot3']=(_M 'SYSTEM\\CurrentControlSet\\Control\\FileSystem' 'NtfsDisable8dot3NameCreation') -eq 1`,
   `$r['sticky-keys']=(_U 'Control Panel\\Accessibility\\StickyKeys' 'Flags') -eq '506'`,
   `$r['edge-bg']=(_M 'SOFTWARE\\Policies\\Microsoft\\Edge' 'StartupBoostEnabled') -eq 0`,
-  `$r['nvidia-opt']=((_M 'SOFTWARE\\NVIDIA Corporation\\NvControlPanel2\\Client' 'OptInOrOutPreference') -eq 0) -and ((_M 'SYSTEM\\CurrentControlSet\\Services\\nvlddmkm\\Global\\NVTweak' 'RmGpsPsEnablePerCpuCoreDpc') -eq 1)`,
+  `$r['nv-opt']=((_M 'SOFTWARE\\NVIDIA Corporation\\NvControlPanel2\\Client' 'OptInOrOutPreference') -eq 0) -and ((_M 'SYSTEM\\CurrentControlSet\\Services\\nvlddmkm\\Global\\NVTweak' 'RmGpsPsEnablePerCpuCoreDpc') -eq 1)`,
   // ── GPU NVIDIA ──
   `try{$nvOk=$false;Get-ChildItem 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}' -EA Stop|ForEach-Object{$d=(Get-ItemProperty $_.PSPath -Name DriverDesc -EA SilentlyContinue).DriverDesc;if($d -match 'NVIDIA'){$v=(Get-ItemProperty $_.PSPath -Name PowerMizerLevel -EA SilentlyContinue).PowerMizerLevel;if($v -eq 1){$nvOk=$true}}};$r['nv-power-max']=$nvOk}catch{$r['nv-power-max']=$false}`,
   `$r['nv-low-latency']=(_M 'SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak' 'Low_Latency_Mode') -eq 2`,

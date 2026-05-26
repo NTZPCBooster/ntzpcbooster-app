@@ -37,7 +37,6 @@ if ($driverRaw) {
   if ($dp.Count -ge 4) { $combo = $dp[-2] + $dp[-1]; $l5 = $combo.Substring($combo.Length - 5); $nvDriver = $l5.Substring(0,3) + '.' + $l5.Substring(3) }
 }
 $latestNv = ''
-try { $page = Invoke-WebRequest -Uri 'https://www.nvidia.com/Download/driverResults.aspx/230208/en-us/' -UseBasicParsing -TimeoutSec 5; if ($page.Content -match '(\\d{3}\\.\\d{2})') { $latestNv = $Matches[1] } } catch {}
 $result = @{
   hostname = $env:COMPUTERNAME
   user = $env:USERNAME

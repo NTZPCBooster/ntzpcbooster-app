@@ -5,9 +5,31 @@
  * or executed once (runOnce). The `risk` field controls whether the
  * ConfirmDialog is shown before execution.
  *
- * Categories: gaming | limpeza | tweaks
+ * Categories: gaming | limpeza | tweaks | gpu
  */
 import type { Optimization } from '../types';
+
+/**
+ * NVAPI DRS PowerShell helper — inline C# that P/Invokes nvapi64.dll to
+ * modify NVIDIA 3D profile settings via the Driver Regulation System (DRS) API.
+ *
+ * The NVTweak registry keys do NOT control NVIDIA 3D settings.
+ * Actual 3D settings are stored in the DRS binary database (nvdrsdb0.bin).
+ * This helper calls the NVAPI DRS API (same API used by NVIDIA Control Panel)
+ * to set/unset global profile settings properly.
+ *
+ * Function IDs (NvAPI_QueryInterface):
+ *   Initialize=0x0150E828, DRS_CreateSession=0x0694D52E, DRS_LoadSettings=0x375DBD6B,
+ *   DRS_GetBaseProfile=0xDA8466A0, DRS_SetSetting=0x577DD202, DRS_SaveSettings=0xFCBC7E14,
+ *   DRS_DestroySession=0xDAD9CFF8
+ *
+ * NVDRS_SETTING_V1 struct offsets (12312 bytes total):
+ *   0=version, 4=settingName[4096], 4100=settingId, 4104=settingType,
+ *   4108=settingLocation, 4112=isCurrentPredefined, 4116=isPredefinedValid,
+ *   4120=predefinedValue[4096], 8216=currentValue[4096]
+ */
+const NV_DRS = `if(-not('NvDRS'-as[type])){Add-Type -TypeDefinition 'using System;using System.Runtime.InteropServices;public class NvDRS{[DllImport("nvapi64.dll",EntryPoint="nvapi_QueryInterface",CallingConvention=CallingConvention.Cdecl)]static extern IntPtr Q(uint id);delegate int D0();delegate int D1(out IntPtr h);delegate int D2(IntPtr h);delegate int D3(IntPtr h,out IntPtr p);delegate int D4(IntPtr h,IntPtr p,IntPtr s);public static int Set(uint sid,uint val){var init=(D0)Marshal.GetDelegateForFunctionPointer(Q(0x0150E828),typeof(D0));var cs=(D1)Marshal.GetDelegateForFunctionPointer(Q(0x0694D52E),typeof(D1));var ls=(D2)Marshal.GetDelegateForFunctionPointer(Q(0x375DBD6B),typeof(D2));var gbp=(D3)Marshal.GetDelegateForFunctionPointer(Q(0xDA8466A0),typeof(D3));var ss=(D4)Marshal.GetDelegateForFunctionPointer(Q(0x577DD202),typeof(D4));var sv=(D2)Marshal.GetDelegateForFunctionPointer(Q(0xFCBC7E14),typeof(D2));var ds=(D2)Marshal.GetDelegateForFunctionPointer(Q(0xDAD9CFF8),typeof(D2));if(init()!=0)return -1;IntPtr se,pr;if(cs(out se)!=0)return -2;if(ls(se)!=0){ds(se);return -3;}if(gbp(se,out pr)!=0){ds(se);return -4;}IntPtr p=Marshal.AllocHGlobal(12312);for(int i=0;i<12312;i++)Marshal.WriteByte(p,i,0);Marshal.WriteInt32(p,0,12312|(1<<16));Marshal.WriteInt32(p,4100,(int)sid);Marshal.WriteInt32(p,4104,0);Marshal.WriteInt32(p,8216,(int)val);int r=ss(se,pr,p);Marshal.FreeHGlobal(p);if(r!=0){ds(se);return r;}sv(se);ds(se);return 0;}}'}`;
+
 
 export const OPTIMIZATIONS: Optimization[] = [
   // ─────────────── GAMING ───────────────
@@ -233,7 +255,7 @@ export const OPTIMIZATIONS: Optimization[] = [
     category: 'gaming',
     title: 'GPU Alto Desempenho Global',
     short: 'Tudo roda na placa dedicada',
-    long: 'Forca todos os apps a usarem a GPU dedicada (sua RTX 3070) em vez da integrada. Garante que nada vai rodar acidentalmente na GPU fraca.',
+    long: 'Forca todos os apps a usarem a GPU dedicada em vez da integrada. Garante que nada vai rodar acidentalmente na GPU fraca.',
     admin: false,
     risk: 'nenhum',
     icon: 'cpu',
@@ -325,8 +347,8 @@ export const OPTIMIZATIONS: Optimization[] = [
     undoScript: `bcdedit /set disabledynamictick no`,
   },
   {
-    id: 'nvidia-opt',
-    category: 'gaming',
+    id: 'nv-opt',
+    category: 'gpu',
     title: 'Otimizar NVIDIA',
     short: 'Desliga telemetria e melhora DPC',
     long: 'Desativa a telemetria da NVIDIA (para de enviar dados de uso) e habilita distribuicao de interrupcoes da GPU por nucleo da CPU, reduzindo latencia. Apenas para GPUs NVIDIA.',
@@ -354,61 +376,61 @@ export const OPTIMIZATIONS: Optimization[] = [
     id: 'nv-low-latency',
     category: 'gpu',
     title: 'NVIDIA: Low Latency Mode',
-    short: 'Reduz input lag (modo Ultra)',
-    long: 'Ativa o Low Latency Mode em nivel Ultra no perfil global da NVIDIA. Reduz a fila de frames pre-renderizados para 1, diminuindo o input lag significativamente em jogos competitivos.',
+    short: 'Reduz input lag (pre-rendered frames)',
+    long: 'Ativa o Low Latency Mode no perfil global da NVIDIA via DRS API. Reduz a fila de frames pre-renderizados para 1, diminuindo o input lag significativamente em jogos competitivos.',
     admin: true,
     risk: 'nenhum',
     icon: 'zap',
-    script: `$nv3d='HKLM:\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak'; reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v Low_Latency_Mode /t REG_DWORD /d 2 /f`,
-    undoScript: `reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v Low_Latency_Mode /t REG_DWORD /d 0 /f`,
+    script: `${NV_DRS};[NvDRS]::Set(0x10835000,2)|Out-Null;$r=[NvDRS]::Set(0x007BA09E,1);if($r-ne 0){throw "NvAPI DRS error: $r"};reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v Low_Latency_Mode /t REG_DWORD /d 2 /f|Out-Null`,
+    undoScript: `${NV_DRS};[NvDRS]::Set(0x10835000,0)|Out-Null;[NvDRS]::Set(0x007BA09E,0)|Out-Null;reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v Low_Latency_Mode /t REG_DWORD /d 0 /f|Out-Null`,
   },
   {
     id: 'nv-threaded-opt',
     category: 'gpu',
     title: 'NVIDIA: Threaded Optimization',
     short: 'Melhor uso de CPU multi-thread',
-    long: 'Ativa a otimizacao multi-thread no driver NVIDIA globalmente. Permite que o driver distribua trabalho por todos os nucleos da CPU, melhorando performance em jogos que usam muitas draw calls.',
+    long: 'Ativa a otimizacao multi-thread no driver NVIDIA globalmente via DRS API. Permite que o driver distribua trabalho por todos os nucleos da CPU, melhorando performance em jogos que usam muitas draw calls.',
     admin: true,
     risk: 'nenhum',
     icon: 'cpu',
-    script: `reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v Threaded_Optimization /t REG_DWORD /d 1 /f`,
-    undoScript: `reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v Threaded_Optimization /t REG_DWORD /d 0 /f`,
+    script: `${NV_DRS};$r=[NvDRS]::Set(0x09873C21,1);if($r-ne 0){throw "NvAPI DRS error: $r"};reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v Threaded_Optimization /t REG_DWORD /d 1 /f|Out-Null`,
+    undoScript: `${NV_DRS};[NvDRS]::Set(0x09873C21,0)|Out-Null;reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v Threaded_Optimization /t REG_DWORD /d 0 /f|Out-Null`,
   },
   {
     id: 'nv-tex-quality',
     category: 'gpu',
     title: 'NVIDIA: Texture Filtering',
     short: 'Filtro de textura em High Performance',
-    long: 'Muda a qualidade de filtragem de texturas para "High Performance" no driver NVIDIA. Sacrifica um pouco de qualidade visual (quase imperceptivel) em troca de FPS extras.',
+    long: 'Muda a qualidade de filtragem de texturas para "High Performance" no driver NVIDIA via DRS API. Sacrifica um pouco de qualidade visual (quase imperceptivel) em troca de FPS extras.',
     admin: true,
     risk: 'nenhum',
     icon: 'image',
-    script: `reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v Texture_Filtering_Quality /t REG_DWORD /d 0 /f`,
-    undoScript: `reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v Texture_Filtering_Quality /t REG_DWORD /d 1 /f`,
+    script: `${NV_DRS};$r=[NvDRS]::Set(0x00CE2691,3);if($r-ne 0){throw "NvAPI DRS error: $r"};reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v Texture_Filtering_Quality /t REG_DWORD /d 0 /f|Out-Null`,
+    undoScript: `${NV_DRS};[NvDRS]::Set(0x00CE2691,1)|Out-Null;reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v Texture_Filtering_Quality /t REG_DWORD /d 1 /f|Out-Null`,
   },
   {
     id: 'nv-vsync-off',
     category: 'gpu',
     title: 'NVIDIA: V-Sync Global Off',
     short: 'Desliga sincronizacao vertical',
-    long: 'Desativa o V-Sync globalmente no driver NVIDIA. Remove o cap de FPS pelo refresh rate do monitor e elimina input lag causado pela sincronizacao. Pode causar tearing se voce nao usar G-Sync/FreeSync.',
+    long: 'Desativa o V-Sync globalmente no driver NVIDIA via DRS API. Remove o cap de FPS pelo refresh rate do monitor e elimina input lag causado pela sincronizacao. Pode causar tearing se voce nao usar G-Sync/FreeSync.',
     admin: true,
     risk: 'baixo',
     icon: 'monitor',
-    script: `reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v VSyncMode /t REG_DWORD /d 0 /f`,
-    undoScript: `reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v VSyncMode /t REG_DWORD /d 1 /f`,
+    script: `${NV_DRS};$r=[NvDRS]::Set(0x00A879CF,0x08416747);if($r-ne 0){throw "NvAPI DRS error: $r"};reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v VSyncMode /t REG_DWORD /d 0 /f|Out-Null`,
+    undoScript: `${NV_DRS};[NvDRS]::Set(0x00A879CF,0x60925292)|Out-Null;reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v VSyncMode /t REG_DWORD /d 1 /f|Out-Null`,
   },
   {
     id: 'nv-shader-cache',
     category: 'gpu',
     title: 'NVIDIA: Shader Cache Unlimited',
     short: 'Evita recompilacao de shaders',
-    long: 'Remove o limite do cache de shaders da NVIDIA. Em vez de apagar shaders antigos quando o cache fica cheio, mantém todos. Reduz stuttering ao revisitar areas em jogos.',
+    long: 'Remove o limite do cache de shaders da NVIDIA via DRS API. Em vez de apagar shaders antigos quando o cache fica cheio, mantém todos. Reduz stuttering ao revisitar areas em jogos.',
     admin: true,
     risk: 'nenhum',
     icon: 'database',
-    script: `reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v ShaderCache_Size /t REG_DWORD /d 0xFFFFFFFF /f`,
-    undoScript: `reg delete "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v ShaderCache_Size /f`,
+    script: `${NV_DRS};$r=[NvDRS]::Set(0x00AC8F8C,[uint32]::MaxValue);if($r-ne 0){throw "NvAPI DRS error: $r"};reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v ShaderCache_Size /t REG_DWORD /d 0xFFFFFFFF /f|Out-Null`,
+    undoScript: `${NV_DRS};[NvDRS]::Set(0x00AC8F8C,0)|Out-Null;reg delete "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v ShaderCache_Size /f 2>$null`,
   },
 
   // ─────────────── GPU (AMD) ───────────────

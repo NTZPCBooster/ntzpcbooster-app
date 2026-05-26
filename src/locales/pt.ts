@@ -350,7 +350,7 @@ export default {
 
   'opt.gpu-perf.title': 'GPU Alto Desempenho Global',
   'opt.gpu-perf.short': 'Tudo roda na placa dedicada',
-  'opt.gpu-perf.long': 'Forca todos os apps a usarem a GPU dedicada (sua RTX 3070) em vez da integrada. Garante que nada vai rodar acidentalmente na GPU fraca.',
+  'opt.gpu-perf.long': 'Forca todos os apps a usarem a GPU dedicada em vez da integrada. Garante que nada vai rodar acidentalmente na GPU fraca.',
 
   'opt.game-mode.title': 'Desativar Game Mode',
   'opt.game-mode.short': 'Para o Game Mode bugado',
@@ -380,9 +380,9 @@ export default {
   'opt.dynamic-tick.short': 'Menos micro-stutter em jogos',
   'opt.dynamic-tick.long': 'O Windows pula ticks do relogio interno pra economizar energia, causando micro-hesitacoes. Desativar forca um tick constante — a CPU responde sempre no mesmo ritmo. Requer reinicializacao.',
 
-  'opt.nvidia-opt.title': 'Otimizar NVIDIA',
-  'opt.nvidia-opt.short': 'Desliga telemetria e melhora DPC',
-  'opt.nvidia-opt.long': 'Desativa a telemetria da NVIDIA (para de enviar dados de uso) e habilita distribuicao de interrupcoes da GPU por nucleo da CPU, reduzindo latencia. Apenas para GPUs NVIDIA.',
+  'opt.nv-opt.title': 'Otimizar NVIDIA',
+  'opt.nv-opt.short': 'Desliga telemetria e melhora DPC',
+  'opt.nv-opt.long': 'Desativa a telemetria da NVIDIA (para de enviar dados de uso) e habilita distribuicao de interrupcoes da GPU por nucleo da CPU, reduzindo latencia. Apenas para GPUs NVIDIA.',
 
   // ── Optimizations: Cleanup ──
   'opt.temp-files.title': 'Arquivos Temporarios',
