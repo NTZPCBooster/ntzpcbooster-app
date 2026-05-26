@@ -1564,8 +1564,11 @@ input { font-family: inherit; }
    SETTINGS PAGE
    ════════════════════════════════════════════════════════════════ */
 .settings-page {
-  max-width: 540px;
+  max-width: 600px;
   padding: var(--s5) 0;
+}
+.settings-page__frame {
+  padding: var(--s5);
 }
 .settings-page__section {
   margin-bottom: var(--s5);

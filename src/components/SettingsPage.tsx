@@ -1,4 +1,4 @@
-import { Icon, Switch } from './primitives';
+import { Icon, Switch, TickFrame } from './primitives';
 import type { SchedulerConfig } from '../hooks/useScheduler';
 import { LOCALE_LABELS, useI18n } from '../i18n';
 import type { Locale } from '../i18n';
@@ -26,6 +26,7 @@ export function SettingsPage({
 
   return (
     <section className="settings-page">
+      <TickFrame label="SETTINGS" code="CONFIG" className="settings-page__frame">
       {/* IDIOMA */}
       <div className="settings-page__section">
         <div className="settings-page__section-label mono">{t('settings.language')}</div>
@@ -116,6 +117,7 @@ export function SettingsPage({
           </button>
         </div>
       </div>
+      </TickFrame>
     </section>
   );
 }
