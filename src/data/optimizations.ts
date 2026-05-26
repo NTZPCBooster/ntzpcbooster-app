@@ -23,12 +23,12 @@ import type { Optimization } from '../types';
  *   DRS_GetBaseProfile=0xDA8466A0, DRS_SetSetting=0x577DD202, DRS_SaveSettings=0xFCBC7E14,
  *   DRS_DestroySession=0xDAD9CFF8
  *
- * NVDRS_SETTING_V1 struct offsets (12312 bytes total):
+ * NVDRS_SETTING_V1 struct offsets (12320 bytes total):
  *   0=version, 4=settingName[4096], 4100=settingId, 4104=settingType,
  *   4108=settingLocation, 4112=isCurrentPredefined, 4116=isPredefinedValid,
- *   4120=predefinedValue[4096], 8216=currentValue[4096]
+ *   4120=predefinedValue union[4100], 8220=currentValue union[4100]
  */
-const NV_DRS = `if(-not('NvDRS'-as[type])){Add-Type -TypeDefinition 'using System;using System.Runtime.InteropServices;public class NvDRS{[DllImport("nvapi64.dll",EntryPoint="nvapi_QueryInterface",CallingConvention=CallingConvention.Cdecl)]static extern IntPtr Q(uint id);delegate int D0();delegate int D1(out IntPtr h);delegate int D2(IntPtr h);delegate int D3(IntPtr h,out IntPtr p);delegate int D4(IntPtr h,IntPtr p,IntPtr s);public static int Set(uint sid,uint val){var init=(D0)Marshal.GetDelegateForFunctionPointer(Q(0x0150E828),typeof(D0));var cs=(D1)Marshal.GetDelegateForFunctionPointer(Q(0x0694D52E),typeof(D1));var ls=(D2)Marshal.GetDelegateForFunctionPointer(Q(0x375DBD6B),typeof(D2));var gbp=(D3)Marshal.GetDelegateForFunctionPointer(Q(0xDA8466A0),typeof(D3));var ss=(D4)Marshal.GetDelegateForFunctionPointer(Q(0x577DD202),typeof(D4));var sv=(D2)Marshal.GetDelegateForFunctionPointer(Q(0xFCBC7E14),typeof(D2));var ds=(D2)Marshal.GetDelegateForFunctionPointer(Q(0xDAD9CFF8),typeof(D2));if(init()!=0)return -1;IntPtr se,pr;if(cs(out se)!=0)return -2;if(ls(se)!=0){ds(se);return -3;}if(gbp(se,out pr)!=0){ds(se);return -4;}IntPtr p=Marshal.AllocHGlobal(12312);for(int i=0;i<12312;i++)Marshal.WriteByte(p,i,0);Marshal.WriteInt32(p,0,12312|(1<<16));Marshal.WriteInt32(p,4100,(int)sid);Marshal.WriteInt32(p,4104,0);Marshal.WriteInt32(p,8216,(int)val);int r=ss(se,pr,p);Marshal.FreeHGlobal(p);if(r!=0){ds(se);return r;}sv(se);ds(se);return 0;}}'}`;
+const NV_DRS = `if(-not('NvDRS'-as[type])){Add-Type -TypeDefinition 'using System;using System.Runtime.InteropServices;public class NvDRS{[DllImport("nvapi64.dll",EntryPoint="nvapi_QueryInterface",CallingConvention=CallingConvention.Cdecl)]static extern IntPtr Q(uint id);delegate int D0();delegate int D1(out IntPtr h);delegate int D2(IntPtr h);delegate int D3(IntPtr h,out IntPtr p);delegate int D4(IntPtr h,IntPtr p,IntPtr s);public static int Set(uint sid,uint val){var init=(D0)Marshal.GetDelegateForFunctionPointer(Q(0x0150E828),typeof(D0));var cs=(D1)Marshal.GetDelegateForFunctionPointer(Q(0x0694D52E),typeof(D1));var ls=(D2)Marshal.GetDelegateForFunctionPointer(Q(0x375DBD6B),typeof(D2));var gbp=(D3)Marshal.GetDelegateForFunctionPointer(Q(0xDA8466A0),typeof(D3));var ss=(D4)Marshal.GetDelegateForFunctionPointer(Q(0x577DD202),typeof(D4));var sv=(D2)Marshal.GetDelegateForFunctionPointer(Q(0xFCBC7E14),typeof(D2));var ds=(D2)Marshal.GetDelegateForFunctionPointer(Q(0xDAD9CFF8),typeof(D2));if(init()!=0)return -1;IntPtr se,pr;if(cs(out se)!=0)return -2;if(ls(se)!=0){ds(se);return -3;}if(gbp(se,out pr)!=0){ds(se);return -4;}IntPtr p=Marshal.AllocHGlobal(12320);for(int i=0;i<12320;i++)Marshal.WriteByte(p,i,0);Marshal.WriteInt32(p,0,12320|(1<<16));Marshal.WriteInt32(p,4100,(int)sid);Marshal.WriteInt32(p,4104,0);Marshal.WriteInt32(p,8220,(int)val);int r=ss(se,pr,p);Marshal.FreeHGlobal(p);if(r!=0){ds(se);return r;}sv(se);ds(se);return 0;}}'}`;
 
 
 export const OPTIMIZATIONS: Optimization[] = [
@@ -365,24 +365,24 @@ export const OPTIMIZATIONS: Optimization[] = [
     category: 'gpu',
     title: 'NVIDIA: Maximum Performance',
     short: 'Impede downclock durante jogos',
-    long: 'Forca o modo de energia da GPU NVIDIA para "Prefer Maximum Performance". A placa nunca reduz clock pra economizar energia — ideal pra jogos e benchmarks. Apenas para GPUs NVIDIA.',
+    long: 'Forca o modo de energia da GPU NVIDIA para "Prefer Maximum Performance" via DRS API. A placa nunca reduz clock pra economizar energia — ideal pra jogos e benchmarks.',
     admin: true,
     risk: 'baixo',
     icon: 'bolt',
-    script: `$basePath='HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}'; Get-ChildItem $basePath -ErrorAction SilentlyContinue | ForEach-Object { $desc=(Get-ItemProperty $_.PSPath -Name DriverDesc -ErrorAction SilentlyContinue).DriverDesc; if($desc -match 'NVIDIA'){ reg add $_.Name.Replace('HKEY_LOCAL_MACHINE','HKLM') /v PerfLevelSrc /t REG_DWORD /d 0x3322 /f; reg add $_.Name.Replace('HKEY_LOCAL_MACHINE','HKLM') /v PowerMizerEnable /t REG_DWORD /d 1 /f; reg add $_.Name.Replace('HKEY_LOCAL_MACHINE','HKLM') /v PowerMizerLevel /t REG_DWORD /d 1 /f; reg add $_.Name.Replace('HKEY_LOCAL_MACHINE','HKLM') /v PowerMizerLevelAC /t REG_DWORD /d 1 /f }}`,
-    undoScript: `$basePath='HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}'; Get-ChildItem $basePath -ErrorAction SilentlyContinue | ForEach-Object { $desc=(Get-ItemProperty $_.PSPath -Name DriverDesc -ErrorAction SilentlyContinue).DriverDesc; if($desc -match 'NVIDIA'){ reg delete $_.Name.Replace('HKEY_LOCAL_MACHINE','HKLM') /v PerfLevelSrc /f 2>$null; reg delete $_.Name.Replace('HKEY_LOCAL_MACHINE','HKLM') /v PowerMizerEnable /f 2>$null; reg delete $_.Name.Replace('HKEY_LOCAL_MACHINE','HKLM') /v PowerMizerLevel /f 2>$null; reg delete $_.Name.Replace('HKEY_LOCAL_MACHINE','HKLM') /v PowerMizerLevelAC /f 2>$null }}`,
+    script: `${NV_DRS};$r=[NvDRS]::Set(0x1057EB71,1);if($r-ne 0){throw "NvAPI DRS error: $r"}`,
+    undoScript: `${NV_DRS};[NvDRS]::Set(0x1057EB71,0)|Out-Null`,
   },
   {
     id: 'nv-low-latency',
     category: 'gpu',
     title: 'NVIDIA: Low Latency Mode',
-    short: 'Reduz input lag (pre-rendered frames)',
-    long: 'Ativa o Low Latency Mode no perfil global da NVIDIA via DRS API. Reduz a fila de frames pre-renderizados para 1, diminuindo o input lag significativamente em jogos competitivos.',
+    short: 'Reduz input lag (pre-rendered frames = 1)',
+    long: 'Limita os frames pre-renderizados da CPU a 1 via DRS API. Mesmo efeito do "Low Latency Mode: On" — reduz input lag significativamente em jogos competitivos. Visivel no NVCP como "Quadros pre-renderizados = 1".',
     admin: true,
     risk: 'nenhum',
     icon: 'zap',
-    script: `${NV_DRS};[NvDRS]::Set(0x10835000,2)|Out-Null;$r=[NvDRS]::Set(0x007BA09E,1);if($r-ne 0){throw "NvAPI DRS error: $r"};reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v Low_Latency_Mode /t REG_DWORD /d 2 /f|Out-Null`,
-    undoScript: `${NV_DRS};[NvDRS]::Set(0x10835000,0)|Out-Null;[NvDRS]::Set(0x007BA09E,0)|Out-Null;reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v Low_Latency_Mode /t REG_DWORD /d 0 /f|Out-Null`,
+    script: `${NV_DRS};$r=[NvDRS]::Set(0x007BA09E,1);if($r-ne 0){throw "NvAPI DRS error: $r"}`,
+    undoScript: `${NV_DRS};[NvDRS]::Set(0x007BA09E,0)|Out-Null`,
   },
   {
     id: 'nv-threaded-opt',
@@ -393,8 +393,8 @@ export const OPTIMIZATIONS: Optimization[] = [
     admin: true,
     risk: 'nenhum',
     icon: 'cpu',
-    script: `${NV_DRS};$r=[NvDRS]::Set(0x09873C21,1);if($r-ne 0){throw "NvAPI DRS error: $r"};reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v Threaded_Optimization /t REG_DWORD /d 1 /f|Out-Null`,
-    undoScript: `${NV_DRS};[NvDRS]::Set(0x09873C21,0)|Out-Null;reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v Threaded_Optimization /t REG_DWORD /d 0 /f|Out-Null`,
+    script: `${NV_DRS};$r=[NvDRS]::Set(0x20C1221E,1);if($r-ne 0){throw "NvAPI DRS error: $r"};reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v Threaded_Optimization /t REG_DWORD /d 1 /f|Out-Null`,
+    undoScript: `${NV_DRS};[NvDRS]::Set(0x20C1221E,0)|Out-Null;reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v Threaded_Optimization /t REG_DWORD /d 0 /f|Out-Null`,
   },
   {
     id: 'nv-tex-quality',
@@ -425,12 +425,12 @@ export const OPTIMIZATIONS: Optimization[] = [
     category: 'gpu',
     title: 'NVIDIA: Shader Cache Unlimited',
     short: 'Evita recompilacao de shaders',
-    long: 'Remove o limite do cache de shaders da NVIDIA via DRS API. Em vez de apagar shaders antigos quando o cache fica cheio, mantém todos. Reduz stuttering ao revisitar areas em jogos.',
+    long: 'Remove o limite do cache de shaders da NVIDIA via DRS API. Ativa o Shader Cache e define o tamanho como ilimitado. Reduz stuttering ao revisitar areas em jogos.',
     admin: true,
     risk: 'nenhum',
     icon: 'database',
-    script: `${NV_DRS};$r=[NvDRS]::Set(0x00AC8F8C,[uint32]::MaxValue);if($r-ne 0){throw "NvAPI DRS error: $r"};reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v ShaderCache_Size /t REG_DWORD /d 0xFFFFFFFF /f|Out-Null`,
-    undoScript: `${NV_DRS};[NvDRS]::Set(0x00AC8F8C,0)|Out-Null;reg delete "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v ShaderCache_Size /f 2>$null`,
+    script: `${NV_DRS};$r=[NvDRS]::Set(0x00198FFF,1);if($r-ne 0){throw "NvAPI DRS error: $r"};$r2=[NvDRS]::Set(0x00AC8497,[uint32]::MaxValue);if($r2-ne 0){throw "NvAPI DRS size error: $r2"};reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v ShaderCache_Size /t REG_DWORD /d 0xFFFFFFFF /f|Out-Null`,
+    undoScript: `${NV_DRS};[NvDRS]::Set(0x00AC8497,0x4000)|Out-Null;reg delete "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v ShaderCache_Size /f 2>$null`,
   },
 
   // ─────────────── GPU (AMD) ───────────────

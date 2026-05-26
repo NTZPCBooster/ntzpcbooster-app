@@ -727,6 +727,8 @@ function App() {
           </div>
         </div>
 
+        <UpdateChecker />
+
         <div className="main__content">{renderMain()}</div>
 
         <footer className="main__foot mono">
@@ -742,8 +744,6 @@ function App() {
           <span>{toast.msg}</span>
         </div>
       )}
-
-      <UpdateChecker />
 
       <AppearancePanel
         open={showAppearance}

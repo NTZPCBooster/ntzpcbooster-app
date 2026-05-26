@@ -98,7 +98,7 @@ export function UpdateChecker() {
       {status === "available" && (
         <>
           <div className="updater-banner__info">
-            <Icon name="arrow-circle-up" size={18} />
+            <Icon name="arrow-circle-up" size={16} />
             <span>
               {t('update.available', { version: info?.version || '' })}
             </span>
@@ -107,9 +107,9 @@ export function UpdateChecker() {
             <button className="updater-banner__btn updater-banner__btn--update" onClick={handleUpdate}>
               {t('update.now')}
             </button>
-            <button className="updater-banner__btn updater-banner__btn--dismiss" onClick={() => setDismissed(true)}>
+            <span className="updater-banner__btn updater-banner__btn--dismiss" style={{ cursor: 'pointer' }} onClick={() => setDismissed(true)}>
               {t('update.later')}
-            </button>
+            </span>
           </div>
         </>
       )}
