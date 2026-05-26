@@ -2,6 +2,7 @@ export default {
   // ── Navigation (sidebar labels) ──
   'nav.dashboard': 'Panel',
   'nav.gaming': 'Gaming Boost',
+  'nav.gpu': 'GPU Boost',
   'nav.limpeza': 'Limpieza',
   'nav.tweaks': 'Tweaks',
   'nav.startup': 'Inicio',

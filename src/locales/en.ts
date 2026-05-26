@@ -2,6 +2,7 @@ export default {
   // Navigation
   'nav.dashboard': 'Dashboard',
   'nav.gaming': 'Gaming Boost',
+  'nav.gpu': 'GPU Boost',
   'nav.limpeza': 'Cleanup',
   'nav.tweaks': 'Tweaks',
   'nav.startup': 'Startup',

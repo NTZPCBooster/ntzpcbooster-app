@@ -1,6 +1,6 @@
 export interface Optimization {
   id: string;
-  category: 'gaming' | 'limpeza' | 'tweaks';
+  category: 'gaming' | 'limpeza' | 'tweaks' | 'gpu';
   title: string;
   short: string;
   long: string;

@@ -12,6 +12,7 @@ export const STORAGE_KEY = 'pcboost';
 export type PageId =
   | 'dashboard'
   | 'gaming'
+  | 'gpu'
   | 'limpeza'
   | 'tweaks'
   | 'startup'

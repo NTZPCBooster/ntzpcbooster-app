@@ -5,6 +5,7 @@ import { OPTIMIZATIONS } from './optimizations';
 export const CATEGORIES: CategoryInfo[] = [
   { id: 'dashboard', label: 'Painel',       short: 'home',     count: null },
   { id: 'gaming',    label: 'Gaming Boost',  short: 'gamepad',  count: OPTIMIZATIONS.filter(o => o.category === 'gaming').length },
+  { id: 'gpu',       label: 'GPU Boost',     short: 'monitor',  count: OPTIMIZATIONS.filter(o => o.category === 'gpu').length },
   { id: 'limpeza',   label: 'Limpeza',       short: 'trash',    count: OPTIMIZATIONS.filter(o => o.category === 'limpeza').length },
   { id: 'tweaks',    label: 'Tweaks',        short: 'sliders',  count: OPTIMIZATIONS.filter(o => o.category === 'tweaks').length },
   { id: 'startup',   label: 'Inicializacao', short: 'power',    count: null },

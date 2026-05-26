@@ -9,7 +9,7 @@ describe('OPTIMIZATIONS', () => {
   it('every optimization has required fields', () => {
     for (const opt of OPTIMIZATIONS) {
       expect(opt.id).toBeTruthy();
-      expect(opt.category).toMatch(/^(gaming|limpeza|tweaks)$/);
+      expect(opt.category).toMatch(/^(gaming|gpu|limpeza|tweaks)$/);
       expect(opt.title).toBeTruthy();
       expect(opt.short).toBeTruthy();
       expect(opt.long).toBeTruthy();
@@ -26,9 +26,10 @@ describe('OPTIMIZATIONS', () => {
     expect(unique.size).toBe(ids.length);
   });
 
-  it('has optimizations in all three categories', () => {
+  it('has optimizations in all four categories', () => {
     const cats = new Set(OPTIMIZATIONS.map(o => o.category));
     expect(cats.has('gaming')).toBe(true);
+    expect(cats.has('gpu')).toBe(true);
     expect(cats.has('limpeza')).toBe(true);
     expect(cats.has('tweaks')).toBe(true);
   });
@@ -42,24 +43,27 @@ describe('OPTIMIZATIONS', () => {
 });
 
 describe('CATEGORIES', () => {
-  it('has 7 categories', () => {
-    expect(CATEGORIES).toHaveLength(7);
+  it('has 8 categories', () => {
+    expect(CATEGORIES).toHaveLength(8);
   });
 
   it('first category is dashboard', () => {
     expect(CATEGORIES[0].id).toBe('dashboard');
   });
 
-  it('gaming/limpeza/tweaks have correct counts from OPTIMIZATIONS', () => {
+  it('gaming/gpu/limpeza/tweaks have correct counts from OPTIMIZATIONS', () => {
     const gamingCat = CATEGORIES.find(c => c.id === 'gaming');
+    const gpuCat = CATEGORIES.find(c => c.id === 'gpu');
     const limpezaCat = CATEGORIES.find(c => c.id === 'limpeza');
     const tweaksCat = CATEGORIES.find(c => c.id === 'tweaks');
 
     const gamingCount = OPTIMIZATIONS.filter(o => o.category === 'gaming').length;
+    const gpuCount = OPTIMIZATIONS.filter(o => o.category === 'gpu').length;
     const limpezaCount = OPTIMIZATIONS.filter(o => o.category === 'limpeza').length;
     const tweaksCount = OPTIMIZATIONS.filter(o => o.category === 'tweaks').length;
 
     expect(gamingCat?.count).toBe(gamingCount);
+    expect(gpuCat?.count).toBe(gpuCount);
     expect(limpezaCat?.count).toBe(limpezaCount);
     expect(tweaksCat?.count).toBe(tweaksCount);
   });

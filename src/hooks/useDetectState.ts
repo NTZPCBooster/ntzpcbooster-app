@@ -68,6 +68,20 @@ const DETECT_SCRIPT = [
   `$r['sticky-keys']=(_U 'Control Panel\\Accessibility\\StickyKeys' 'Flags') -eq '506'`,
   `$r['edge-bg']=(_M 'SOFTWARE\\Policies\\Microsoft\\Edge' 'StartupBoostEnabled') -eq 0`,
   `$r['nvidia-opt']=((_M 'SOFTWARE\\NVIDIA Corporation\\NvControlPanel2\\Client' 'OptInOrOutPreference') -eq 0) -and ((_M 'SYSTEM\\CurrentControlSet\\Services\\nvlddmkm\\Global\\NVTweak' 'RmGpsPsEnablePerCpuCoreDpc') -eq 1)`,
+  // ── GPU NVIDIA ──
+  `try{$nvOk=$false;Get-ChildItem 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}' -EA Stop|ForEach-Object{$d=(Get-ItemProperty $_.PSPath -Name DriverDesc -EA SilentlyContinue).DriverDesc;if($d -match 'NVIDIA'){$v=(Get-ItemProperty $_.PSPath -Name PowerMizerLevel -EA SilentlyContinue).PowerMizerLevel;if($v -eq 1){$nvOk=$true}}};$r['nv-power-max']=$nvOk}catch{$r['nv-power-max']=$false}`,
+  `$r['nv-low-latency']=(_M 'SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak' 'Low_Latency_Mode') -eq 2`,
+  `$r['nv-threaded-opt']=(_M 'SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak' 'Threaded_Optimization') -eq 1`,
+  `$r['nv-tex-quality']=(_M 'SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak' 'Texture_Filtering_Quality') -eq 0`,
+  `$r['nv-vsync-off']=(_M 'SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak' 'VSyncMode') -eq 0`,
+  `$r['nv-shader-cache']=[bool]((_M 'SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak' 'ShaderCache_Size') -eq 0xFFFFFFFF -or (_M 'SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak' 'ShaderCache_Size') -eq 4294967295)`,
+  // ── GPU AMD ──
+  `$r['amd-gpu-workload']=(_U 'Software\\AMD\\CN' 'GpuWorkload') -eq '1'`,
+  `$r['amd-tex-filter']=(_U 'Software\\AMD\\CN' 'TFQ') -eq '0'`,
+  `$r['amd-vsync-off']=(_U 'Software\\AMD\\CN' 'WaitForVerticalRefresh') -eq '0'`,
+  `$r['amd-surface-opt']=(_U 'Software\\AMD\\CN' 'SurfaceFormatOptimization') -eq '1'`,
+  `$r['amd-shader-cache']=(_U 'Software\\AMD\\CN' 'ShaderCache') -eq '1'`,
+  `$r['amd-anti-lag']=(_U 'Software\\AMD\\CN' 'AntiLag') -eq '1'`,
   // ── Tweaks ──
   `$r['taskbar-left']=(_U 'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced' 'TaskbarAl') -eq 0`,
   `$r['lock-tips']=(_U 'Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager' 'RotatingLockScreenOverlayEnabled') -eq 0`,

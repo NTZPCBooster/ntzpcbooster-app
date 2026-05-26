@@ -571,6 +571,22 @@ function App() {
             isWin11={isWin11}
           />
         );
+      case "gpu":
+        return (
+          <OptList
+            category="gpu"
+            code="G"
+            title="GPU Boost"
+            subtitle="Otimizações de driver NVIDIA e AMD. Ajustam configurações globais da GPU pra máximo desempenho em jogos."
+            items={OPTIMIZATIONS.filter((o) => o.category === "gpu")}
+            applied={applied}
+            onToggle={toggle}
+            onApply={apply}
+            onBulkToggle={(enable) => handleBulkToggle("gpu", enable)}
+            running={running}
+            bulkRunning={bulkRunning === "gpu"}
+          />
+        );
       case "limpeza":
         return (
           <OptList
