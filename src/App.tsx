@@ -124,7 +124,25 @@ function App() {
 
   // Real storage measurement for cleanup page
   const { sizes: storageSizes, totalMB: storageTotalMB, remeasure: remeasureStorage } = useStorageInfo();
-  const dynamicCounts: Record<string, number> = startupItems.length > 0 ? { startup: startupItems.length } : {};
+  // Detect GPU brand for filtering GPU Boost items
+  const gpuBrand = useMemo(() => {
+    const model = pcInfo.gpu.model.toLowerCase();
+    if (model.includes('nvidia') || model.includes('geforce') || model.includes('rtx') || model.includes('gtx')) return 'nvidia';
+    if (model.includes('amd') || model.includes('radeon') || model.includes('rx ')) return 'amd';
+    return 'unknown';
+  }, [pcInfo.gpu.model]);
+
+  const gpuItems = useMemo(() => {
+    const all = OPTIMIZATIONS.filter((o) => o.category === 'gpu');
+    if (gpuBrand === 'nvidia') return all.filter((o) => o.id.startsWith('nv-'));
+    if (gpuBrand === 'amd') return all.filter((o) => o.id.startsWith('amd-'));
+    return all; // unknown → show all
+  }, [gpuBrand]);
+
+  const dynamicCounts: Record<string, number> = {
+    ...(startupItems.length > 0 ? { startup: startupItems.length } : {}),
+    gpu: gpuItems.length,
+  };
 
   // Native Windows toast notifications
   const notify = useNotify();
@@ -571,14 +589,15 @@ function App() {
             isWin11={isWin11}
           />
         );
-      case "gpu":
+      case "gpu": {
+        const gpuLabel = gpuBrand === 'nvidia' ? 'NVIDIA' : gpuBrand === 'amd' ? 'AMD' : 'NVIDIA / AMD';
         return (
           <OptList
             category="gpu"
             code="G"
-            title="GPU Boost"
-            subtitle="Otimizações de driver NVIDIA e AMD. Ajustam configurações globais da GPU pra máximo desempenho em jogos."
-            items={OPTIMIZATIONS.filter((o) => o.category === "gpu")}
+            title={`GPU Boost — ${gpuLabel}`}
+            subtitle={`Otimizações de driver ${gpuLabel}. Ajustam configurações globais da GPU pra máximo desempenho em jogos.`}
+            items={gpuItems}
             applied={applied}
             onToggle={toggle}
             onApply={apply}
@@ -587,6 +606,7 @@ function App() {
             bulkRunning={bulkRunning === "gpu"}
           />
         );
+      }
       case "limpeza":
         return (
           <OptList
