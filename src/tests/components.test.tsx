@@ -4,6 +4,7 @@ import { I18nProvider } from '../i18n';
 import { Sidebar } from '../components/Sidebar';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AppearancePanel } from '../components/AppearancePanel';
+import { SettingsPage } from '../components/SettingsPage';
 import { DEFAULT_SCHEDULER } from '../hooks/useScheduler';
 
 // Wrapper with I18nProvider
@@ -209,15 +210,6 @@ describe('AppearancePanel', () => {
     onDensityChange: vi.fn(),
     grid: true,
     onGridChange: vi.fn(),
-    minimizeToTray: false,
-    onMinimizeToTrayChange: vi.fn(),
-    locale: 'pt' as const,
-    onLocaleChange: vi.fn(),
-    onExport: vi.fn(),
-    onImport: vi.fn(),
-    scheduler: DEFAULT_SCHEDULER,
-    onSchedulerChange: vi.fn(),
-    lastScheduledRun: null,
   };
 
   it('renders when open', () => {
@@ -248,25 +240,15 @@ describe('AppearancePanel', () => {
     expect(screen.getByText('light')).toBeInTheDocument();
   });
 
-  it('shows language selector with all three locales', () => {
-    render(
+  it('does not show language selector (moved to SettingsPage)', () => {
+    const { container } = render(
       <Wrapper>
         <AppearancePanel {...baseProps} />
       </Wrapper>,
     );
-    expect(screen.getByText('Português')).toBeInTheDocument();
-    expect(screen.getByText('English')).toBeInTheDocument();
-    expect(screen.getByText('Español')).toBeInTheDocument();
-  });
-
-  it('calls onLocaleChange when language button clicked', () => {
-    render(
-      <Wrapper>
-        <AppearancePanel {...baseProps} />
-      </Wrapper>,
-    );
-    fireEvent.click(screen.getByText('English'));
-    expect(baseProps.onLocaleChange).toHaveBeenCalledWith('en');
+    // Language buttons should NOT be in AppearancePanel anymore
+    expect(container.textContent).not.toContain('Português');
+    expect(container.textContent).not.toContain('English');
   });
 
   it('calls onThemeChange when theme button clicked', () => {
@@ -289,16 +271,14 @@ describe('AppearancePanel', () => {
     expect(screen.getByText('compact')).toBeInTheDocument();
   });
 
-  it('shows export/import buttons', () => {
+  it('does not show export/import buttons (moved to SettingsPage)', () => {
     const { container } = render(
       <Wrapper>
         <AppearancePanel {...baseProps} />
       </Wrapper>,
     );
     const buttons = container.querySelectorAll('.btn--ghost.btn--small');
-    const texts = Array.from(buttons).map(b => b.textContent?.trim());
-    expect(texts.some(t => t?.includes('Exportar'))).toBe(true);
-    expect(texts.some(t => t?.includes('Importar'))).toBe(true);
+    expect(buttons).toHaveLength(0);
   });
 
   it('calls onClose when backdrop is clicked', () => {
@@ -311,5 +291,70 @@ describe('AppearancePanel', () => {
     expect(backdrop).toBeInTheDocument();
     fireEvent.click(backdrop!);
     expect(baseProps.onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('SettingsPage', () => {
+  const baseProps = {
+    locale: 'pt' as const,
+    onLocaleChange: vi.fn(),
+    minimizeToTray: false,
+    onMinimizeToTrayChange: vi.fn(),
+    scheduler: DEFAULT_SCHEDULER,
+    onSchedulerChange: vi.fn(),
+    lastScheduledRun: null,
+    onExport: vi.fn(),
+    onImport: vi.fn(),
+  };
+
+  it('shows language selector with all three locales', () => {
+    render(
+      <Wrapper>
+        <SettingsPage {...baseProps} />
+      </Wrapper>,
+    );
+    expect(screen.getByText('Português')).toBeInTheDocument();
+    expect(screen.getByText('English')).toBeInTheDocument();
+    expect(screen.getByText('Español')).toBeInTheDocument();
+  });
+
+  it('calls onLocaleChange when language button clicked', () => {
+    render(
+      <Wrapper>
+        <SettingsPage {...baseProps} />
+      </Wrapper>,
+    );
+    fireEvent.click(screen.getByText('English'));
+    expect(baseProps.onLocaleChange).toHaveBeenCalledWith('en');
+  });
+
+  it('shows export/import buttons', () => {
+    const { container } = render(
+      <Wrapper>
+        <SettingsPage {...baseProps} />
+      </Wrapper>,
+    );
+    const buttons = container.querySelectorAll('.btn--ghost.btn--small');
+    const texts = Array.from(buttons).map(b => b.textContent?.trim());
+    expect(texts.some(t => t?.includes('Exportar'))).toBe(true);
+    expect(texts.some(t => t?.includes('Importar'))).toBe(true);
+  });
+
+  it('shows minimize to tray toggle', () => {
+    render(
+      <Wrapper>
+        <SettingsPage {...baseProps} />
+      </Wrapper>,
+    );
+    expect(screen.getByText('Minimizar pra bandeja ao fechar')).toBeInTheDocument();
+  });
+
+  it('shows scheduler toggle', () => {
+    render(
+      <Wrapper>
+        <SettingsPage {...baseProps} />
+      </Wrapper>,
+    );
+    expect(screen.getByText('Limpeza semanal automatica')).toBeInTheDocument();
   });
 });

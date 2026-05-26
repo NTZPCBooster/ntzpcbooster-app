@@ -1561,6 +1561,39 @@ input { font-family: inherit; }
 }
 
 /* ════════════════════════════════════════════════════════════════
+   SETTINGS PAGE
+   ════════════════════════════════════════════════════════════════ */
+.settings-page {
+  max-width: 540px;
+  padding: var(--s5) 0;
+}
+.settings-page__section {
+  margin-bottom: var(--s5);
+  padding-bottom: var(--s4);
+  border-bottom: 1px solid var(--line);
+}
+.settings-page__section:last-child {
+  border-bottom: none;
+}
+.settings-page__section-label {
+  font-size: 11px; color: var(--ink-3); letter-spacing: 0.08em;
+  margin-bottom: var(--s3);
+  text-transform: uppercase;
+}
+.settings-page__field-label {
+  font-size: 13px; color: var(--ink-2);
+  margin-bottom: var(--s2);
+}
+.settings-page__row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: var(--s2);
+}
+.settings-page__actions {
+  display: flex; gap: var(--s2); margin-top: var(--s2);
+}
+.settings-page__actions .btn { flex: 1; justify-content: center; }
+
+/* ════════════════════════════════════════════════════════════════
    SKELETON LOADING
    ════════════════════════════════════════════════════════════════ */
 @keyframes shimmer {

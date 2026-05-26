@@ -16,4 +16,5 @@ export type PageId =
   | 'tweaks'
   | 'startup'
   | 'hardware'
-  | 'historico';
+  | 'historico'
+  | 'settings';

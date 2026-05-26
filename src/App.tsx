@@ -5,6 +5,7 @@ import { OptList } from "./components/OptList";
 import { HardwarePage } from "./components/HardwarePage";
 import { HistoryPage } from "./components/HistoryPage";
 import { AppearancePanel } from "./components/AppearancePanel";
+import { SettingsPage } from "./components/SettingsPage";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import { ActivationPage } from "./components/ActivationPage";
 import { StartupPage } from "./components/StartupPage";
@@ -612,13 +613,27 @@ function App() {
         return <HardwarePage pc={pcInfo} loading={pcLoading} />;
       case "historico":
         return <HistoryPage history={history} />;
+      case "settings":
+        return (
+          <SettingsPage
+            locale={locale}
+            onLocaleChange={setLocale}
+            minimizeToTray={minimizeToTray}
+            onMinimizeToTrayChange={setMinimizeToTray}
+            scheduler={scheduler}
+            onSchedulerChange={setScheduler}
+            lastScheduledRun={lastScheduledRun}
+            onExport={exportConfig}
+            onImport={importConfig}
+          />
+        );
       default:
         return null;
     }
   }
 
   const currentLabel =
-    CATEGORIES.find((c) => c.id === current)?.label || "Painel";
+    current === 'settings' ? 'Configurações' : (CATEGORIES.find((c) => c.id === current)?.label || "Painel");
 
   // ── License gate render ──
   if (licensed === null) {
@@ -705,15 +720,6 @@ function App() {
         onDensityChange={setDensity}
         grid={grid}
         onGridChange={setGrid}
-        minimizeToTray={minimizeToTray}
-        onMinimizeToTrayChange={setMinimizeToTray}
-        locale={locale}
-        onLocaleChange={setLocale}
-        onExport={exportConfig}
-        onImport={importConfig}
-        scheduler={scheduler}
-        onSchedulerChange={setScheduler}
-        lastScheduledRun={lastScheduledRun}
       />
 
       <ConfirmDialog

@@ -48,7 +48,7 @@ export function Sidebar({ current, onNav, theme, onThemeChange, onOpenAppearance
 
       <div className="sidebar__spacer" />
 
-      {/* Appearance */}
+      {/* Appearance + Settings */}
       <div className="sidebar__theme">
         <div className="sidebar__section-label mono">— {t('sidebar.appearance')}</div>
         <div className="themetoggle">
@@ -68,6 +68,10 @@ export function Sidebar({ current, onNav, theme, onThemeChange, onOpenAppearance
         <button className="sidebar__appearance-btn" onClick={onOpenAppearance}>
           <Icon name="palette" size={14} />
           <span>{t('sidebar.customize')}</span>
+        </button>
+        <button className="sidebar__appearance-btn" onClick={() => onNav('settings')}>
+          <Icon name="sliders" size={14} />
+          <span>{t('sidebar.settings')}</span>
         </button>
       </div>
 

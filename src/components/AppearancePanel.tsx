@@ -1,7 +1,5 @@
 import { Icon, Switch } from './primitives';
-import type { SchedulerConfig } from '../hooks/useScheduler';
-import { LOCALE_LABELS, useI18n } from '../i18n';
-import type { Locale } from '../i18n';
+import { useI18n } from '../i18n';
 
 interface AppearancePanelProps {
   open: boolean;
@@ -14,15 +12,6 @@ interface AppearancePanelProps {
   onDensityChange: (d: string) => void;
   grid: boolean;
   onGridChange: (v: boolean) => void;
-  minimizeToTray: boolean;
-  onMinimizeToTrayChange: (v: boolean) => void;
-  locale: Locale;
-  onLocaleChange: (l: Locale) => void;
-  onExport: () => void;
-  onImport: () => void;
-  scheduler: SchedulerConfig;
-  onSchedulerChange: (s: SchedulerConfig) => void;
-  lastScheduledRun: string | null;
 }
 
 const ACCENTS = [
@@ -34,9 +23,7 @@ const ACCENTS = [
 export function AppearancePanel({
   open, onClose, theme, onThemeChange,
   accent, onAccentChange, density, onDensityChange,
-  grid, onGridChange, minimizeToTray, onMinimizeToTrayChange,
-  locale, onLocaleChange,
-  onExport, onImport, scheduler, onSchedulerChange, lastScheduledRun,
+  grid, onGridChange,
 }: AppearancePanelProps) {
   const { t } = useI18n();
 
@@ -110,89 +97,6 @@ export function AppearancePanel({
         <div className="ap-panel__row">
           <span className="ap-panel__field-label" style={{ marginBottom: 0 }}>{t('settings.grid')}</span>
           <Switch on={grid} onChange={onGridChange} size="sm" />
-        </div>
-
-        {/* IDIOMA */}
-        <div className="ap-panel__section-label mono">{t('settings.language')}</div>
-
-        <div className="ap-panel__field-label">{t('settings.languageLabel')}</div>
-        <div className="ap-segmented">
-          {(Object.keys(LOCALE_LABELS) as Locale[]).map((loc) => (
-            <button
-              key={loc}
-              className={`ap-segmented__btn ${locale === loc ? 'is-on' : ''}`}
-              onClick={() => onLocaleChange(loc)}
-            >
-              {LOCALE_LABELS[loc]}
-            </button>
-          ))}
-        </div>
-
-        {/* COMPORTAMENTO */}
-        <div className="ap-panel__section-label mono">{t('settings.behavior')}</div>
-
-        <div className="ap-panel__row">
-          <span className="ap-panel__field-label" style={{ marginBottom: 0 }}>{t('settings.minimizeToTray')}</span>
-          <Switch on={minimizeToTray} onChange={onMinimizeToTrayChange} size="sm" />
-        </div>
-
-        {/* AGENDAMENTO */}
-        <div className="ap-panel__section-label mono">{t('settings.scheduler')}</div>
-
-        <div className="ap-panel__row">
-          <span className="ap-panel__field-label" style={{ marginBottom: 0 }}>{t('settings.schedulerToggle')}</span>
-          <Switch
-            on={scheduler.enabled}
-            onChange={(v) => onSchedulerChange({ ...scheduler, enabled: v })}
-            size="sm"
-          />
-        </div>
-
-        {scheduler.enabled && (
-          <div className="ap-scheduler">
-            <div className="ap-scheduler__row">
-              <label className="ap-scheduler__label">{t('settings.schedulerDay')}</label>
-              <select
-                className="ap-scheduler__select"
-                value={scheduler.dayOfWeek}
-                onChange={(e) => onSchedulerChange({ ...scheduler, dayOfWeek: Number(e.target.value) })}
-              >
-                {[0, 1, 2, 3, 4, 5, 6].map(d => (
-                  <option key={d} value={d}>{t(`day.${d}`)}</option>
-                ))}
-              </select>
-            </div>
-            <div className="ap-scheduler__row">
-              <label className="ap-scheduler__label">{t('settings.schedulerTime')}</label>
-              <input
-                type="time"
-                className="ap-scheduler__input"
-                value={scheduler.time}
-                onChange={(e) => onSchedulerChange({ ...scheduler, time: e.target.value })}
-              />
-            </div>
-            <p className="ap-scheduler__hint">
-              {t('settings.schedulerHint')}
-            </p>
-            {lastScheduledRun && (
-              <p className="ap-scheduler__last">
-                {t('settings.schedulerLast', { date: new Date(lastScheduledRun).toLocaleString() })}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* CONFIGURACAO */}
-        <div className="ap-panel__section-label mono">{t('settings.config')}</div>
-
-        <div className="ap-panel__field-label">{t('settings.configDesc')}</div>
-        <div className="ap-panel__actions">
-          <button className="btn btn--ghost btn--small" onClick={onExport}>
-            <Icon name="download" size={13} /> {t('settings.export')}
-          </button>
-          <button className="btn btn--ghost btn--small" onClick={onImport}>
-            <Icon name="upload" size={13} /> {t('settings.import')}
-          </button>
         </div>
       </div>
     </>

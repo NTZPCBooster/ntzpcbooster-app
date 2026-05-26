@@ -14,6 +14,7 @@ export default {
   'sidebar.dark': 'Oscuro',
   'sidebar.light': 'Claro',
   'sidebar.customize': 'Personalizar',
+  'sidebar.settings': 'Ajustes',
   'sidebar.status': 'ESTADO',
   'sidebar.operational': 'operativo',
 
