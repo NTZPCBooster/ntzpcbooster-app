@@ -1,6 +1,6 @@
 [package]
 name = "pcboost"
-version = "1.0.0"
+version = "1.2.0"
 description = "Otimizador de PC para Gaming"
 authors = ["PCBoost"]
 edition = "2021"
