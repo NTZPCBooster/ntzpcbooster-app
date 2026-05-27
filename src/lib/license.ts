@@ -21,7 +21,7 @@ const CHECK_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
 export interface LicenseInfo {
   key: string;
   email: string;
-  plan: 'vitalicio' | 'mensal';
+  plan: 'vitalicio' | 'mensal' | 'anual';
   moboId: string;
   activatedAt: string;
   lastChecked: string;

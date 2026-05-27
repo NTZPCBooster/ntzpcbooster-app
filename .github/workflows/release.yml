@@ -36,6 +36,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          VITE_SUPABASE_FUNCTIONS_URL: https://ntuqzkirmskfznhsogqx.supabase.co/functions/v1
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50dXF6a2lybXNrZnpuaHNvZ3F4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0Njk2NzQsImV4cCI6MjA5NTA0NTY3NH0.pOap21iX3UMLodaysapvJ70rU7JiJCiKuW7nT9w3Jqg
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'NTZ PCBooster ${{ github.ref_name }}'

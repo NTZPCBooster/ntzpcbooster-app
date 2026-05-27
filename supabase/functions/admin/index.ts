@@ -417,7 +417,7 @@ serve(async (req: Request) => {
         .insert({
           key,
           email: email.toLowerCase(),
-          plan: plan === 'mensal' ? 'mensal' : 'vitalicio',
+          plan: ['mensal', 'anual', 'vitalicio'].includes(plan) ? plan : 'vitalicio',
           status: 'pending',
           expires_at: expiresAt,
         })
