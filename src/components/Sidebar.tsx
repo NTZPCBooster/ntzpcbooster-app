@@ -20,7 +20,7 @@ export function Sidebar({ current, onNav, theme, onThemeChange, onOpenAppearance
         <Logo size={36} />
         <div className="sidebar__brand-text">
           <div className="sidebar__wordmark mono">PCBOOST</div>
-          <div className="sidebar__codestamp mono">REV.04 · 2026</div>
+          <div className="sidebar__codestamp mono">v{__APP_VERSION__} · 2026</div>
         </div>
       </div>
 

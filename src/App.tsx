@@ -10,6 +10,8 @@ import { ConfirmDialog } from "./components/ConfirmDialog";
 import { ActivationPage } from "./components/ActivationPage";
 import { StartupPage } from "./components/StartupPage";
 import { UpdateChecker } from "./components/UpdateChecker";
+import { OnboardingWizard } from "./components/OnboardingWizard";
+import { PageHints, resetHints } from "./components/PageHints";
 import { Icon } from "./components/primitives";
 import { OPTIMIZATIONS, CATEGORIES, HISTORY } from "./data";
 import { usePCInfo } from "./hooks/usePCInfo";
@@ -21,6 +23,7 @@ import { useNotify } from "./hooks/useNotify";
 import { useConfigIO } from "./hooks/useConfigIO";
 import { useScheduler, DEFAULT_SCHEDULER } from "./hooks/useScheduler";
 import type { SchedulerConfig } from "./hooks/useScheduler";
+import { useAutostart } from "./hooks/useAutostart";
 import { I18nProvider } from "./i18n";
 import type { Locale } from "./i18n";
 import { getLicense, checkStoredLicense } from "./lib/license";
@@ -42,6 +45,7 @@ interface PersistedState {
   lastRan: Record<string, string>; // id → ISO timestamp of last execution
   scheduler: SchedulerConfig;
   lastScheduledRun: string | null; // ISO date of last scheduled cleanup
+  onboardingDone: boolean;
 }
 
 function loadPersisted(): Partial<PersistedState> {
@@ -103,6 +107,7 @@ function App() {
   const [lastRan, setLastRan] = useState<Record<string, string>>(persisted.current.lastRan || {});
   const [scheduler, setScheduler] = useState<SchedulerConfig>(persisted.current.scheduler || DEFAULT_SCHEDULER);
   const [lastScheduledRun, setLastScheduledRun] = useState<string | null>(persisted.current.lastScheduledRun || null);
+  const [onboardingDone, setOnboardingDone] = useState<boolean>(persisted.current.onboardingDone ?? false);
 
   // Loading / running states
   const [running, setRunning] = useState<Set<string>>(new Set());
@@ -165,6 +170,7 @@ function App() {
     if (state.lastRan) setLastRan(state.lastRan as Record<string, string>);
     if (state.scheduler) setScheduler(state.scheduler as SchedulerConfig);
     if (state.lastScheduledRun !== undefined) setLastScheduledRun(state.lastScheduledRun as string | null);
+    if (state.onboardingDone != null) setOnboardingDone(state.onboardingDone as boolean);
   }, []);
   const { exportConfig, importConfig } = useConfigIO(handleConfigImported, showToast);
 
@@ -189,13 +195,16 @@ function App() {
     }
   }, [detectError, showToast]);
 
+  // Autostart with Windows
+  const autostart = useAutostart();
+
   // System tray: intercept close if user prefers minimize-to-tray
   useTrayClose(minimizeToTray);
 
   // Persist state on change
   useEffect(() => {
-    savePersisted({ theme, accent, density, grid, minimizeToTray, locale, applied, history, lastRan, scheduler, lastScheduledRun });
-  }, [theme, accent, density, grid, minimizeToTray, locale, applied, history, lastRan, scheduler, lastScheduledRun]);
+    savePersisted({ theme, accent, density, grid, minimizeToTray, locale, applied, history, lastRan, scheduler, lastScheduledRun, onboardingDone });
+  }, [theme, accent, density, grid, minimizeToTray, locale, applied, history, lastRan, scheduler, lastScheduledRun, onboardingDone]);
 
   // Apply theme / accent / density / grid to root
   useEffect(() => {
@@ -656,11 +665,15 @@ function App() {
             onLocaleChange={setLocale}
             minimizeToTray={minimizeToTray}
             onMinimizeToTrayChange={setMinimizeToTray}
+            startWithWindows={autostart.enabled}
+            startWithWindowsLoading={autostart.loading}
+            onStartWithWindowsChange={autostart.toggle}
             scheduler={scheduler}
             onSchedulerChange={setScheduler}
             lastScheduledRun={lastScheduledRun}
             onExport={exportConfig}
             onImport={importConfig}
+            onResetTutorial={() => { setOnboardingDone(false); resetHints(); }}
           />
         );
       default:
@@ -734,7 +747,7 @@ function App() {
         <footer className="main__foot mono">
           <span>— FIM DO DOCUMENTO</span>
           <span>·</span>
-          <span>PCBOOST · REV.04 · ESCALA 1:1</span>
+          <span>PCBOOST · v{__APP_VERSION__} · ESCALA 1:1</span>
         </footer>
       </main>
 
@@ -767,6 +780,12 @@ function App() {
         onConfirm={confirmPending}
         onCancel={() => setPendingConfirm(null)}
       />
+
+      {!onboardingDone && (
+        <OnboardingWizard onComplete={() => setOnboardingDone(true)} />
+      )}
+
+      <PageHints pageId={current} />
     </div>
     </I18nProvider>
   );

@@ -8,19 +8,24 @@ interface SettingsPageProps {
   onLocaleChange: (l: Locale) => void;
   minimizeToTray: boolean;
   onMinimizeToTrayChange: (v: boolean) => void;
+  startWithWindows: boolean;
+  startWithWindowsLoading: boolean;
+  onStartWithWindowsChange: (v: boolean) => void;
   scheduler: SchedulerConfig;
   onSchedulerChange: (s: SchedulerConfig) => void;
   lastScheduledRun: string | null;
   onExport: () => void;
   onImport: () => void;
+  onResetTutorial: () => void;
 }
 
 export function SettingsPage({
   locale, onLocaleChange,
   minimizeToTray, onMinimizeToTrayChange,
+  startWithWindows, startWithWindowsLoading, onStartWithWindowsChange,
   scheduler, onSchedulerChange,
   lastScheduledRun,
-  onExport, onImport,
+  onExport, onImport, onResetTutorial,
 }: SettingsPageProps) {
   const { t } = useI18n();
 
@@ -52,6 +57,10 @@ export function SettingsPage({
         <div className="settings-page__row">
           <span className="settings-page__field-label" style={{ marginBottom: 0 }}>{t('settings.minimizeToTray')}</span>
           <Switch on={minimizeToTray} onChange={onMinimizeToTrayChange} size="sm" />
+        </div>
+        <div className="settings-page__row">
+          <span className="settings-page__field-label" style={{ marginBottom: 0 }}>{t('settings.startWithWindows')}</span>
+          <Switch on={startWithWindows} onChange={onStartWithWindowsChange} size="sm" disabled={startWithWindowsLoading} />
         </div>
       </div>
 
@@ -114,6 +123,9 @@ export function SettingsPage({
           </button>
           <button className="btn btn--ghost btn--small" onClick={onImport}>
             <Icon name="upload" size={13} /> {t('settings.import')}
+          </button>
+          <button className="btn btn--ghost btn--small" onClick={onResetTutorial}>
+            <Icon name="info" size={13} /> {t('hints.resetTutorial')}
           </button>
         </div>
       </div>

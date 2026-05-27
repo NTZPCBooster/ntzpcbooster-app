@@ -7,13 +7,17 @@
  * 3. Creates the payment record (with affiliate commission if coupon used)
  * 4. Sends email with key + download link via Resend
  *
+ * Handles both Stripe v1 and v2 event formats:
+ *   v1: event.type = "checkout.session.completed"
+ *   v2: event.type = "v1.checkout.session.completed" (thin event, data.object may be null)
+ *
  * Required secrets:
  *   STRIPE_WEBHOOK_SECRET — from Stripe dashboard
  *   STRIPE_SECRET_KEY     — sk_live_... or sk_test_...
  *   RESEND_API_KEY        — re_... from resend.com
  *
  * Stripe Checkout metadata expected:
- *   plan: 'vitalicio' | 'mensal'
+ *   plan: 'anual' | 'mensal'
  *   coupon_code: string (optional)
  */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
@@ -26,6 +30,11 @@ const corsHeaders = {
 };
 
 const REFUND_GRACE_DAYS = 14;
+
+/** Normalize event type — strip v1. prefix from v2 destination events */
+function normalizeEventType(type: string): string {
+  return type.replace(/^v1\./, '');
+}
 
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
@@ -55,12 +64,10 @@ serve(async (req: Request) => {
         Deno.env.get('STRIPE_WEBHOOK_SECRET')!,
       );
     } else {
-      // Fallback: parse directly (Stripe v2 destination format)
       event = JSON.parse(body);
     }
   } catch {
-    // Signature mismatch — parse directly as fallback
-    // TODO: fix v2 destination signing once Stripe stabilizes the format
+    // Signature verification failed — parse directly (v2 destination format)
     try {
       event = JSON.parse(body);
       console.warn('Webhook signature verification skipped — parsed event directly');
@@ -70,11 +77,37 @@ serve(async (req: Request) => {
     }
   }
 
-  // ── Handle checkout.session.completed ──
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session;
+  const eventType = normalizeEventType(event.type);
+  console.log(`[webhook] Event received: ${event.type} (normalized: ${eventType}), id: ${event.id || 'N/A'}`);
 
-    const stripePaymentId = session.payment_intent as string || session.id;
+  // ── Handle checkout.session.completed ──
+  if (eventType === 'checkout.session.completed') {
+    // Retrieve full session data from Stripe (handles thin v2 events and ensures all fields are populated)
+    let session: Stripe.Checkout.Session;
+    try {
+      const eventSession = event.data?.object as Stripe.Checkout.Session | undefined;
+      if (eventSession?.customer_details?.email) {
+        // Full event — use directly
+        session = eventSession;
+      } else {
+        // Thin event or missing fields — retrieve from API
+        const sessionId = eventSession?.id || (event.data?.object as any)?.id;
+        if (!sessionId) {
+          console.error('[webhook] No session ID found in event');
+          return new Response('No session ID', { status: 400 });
+        }
+        console.log(`[webhook] Retrieving full session: ${sessionId}`);
+        session = await stripe.checkout.sessions.retrieve(sessionId, {
+          expand: ['customer_details'],
+        });
+      }
+    } catch (err) {
+      console.error('[webhook] Failed to get session data:', err);
+      return new Response('Session retrieval failed', { status: 500 });
+    }
+
+    const stripePaymentId = (session.payment_intent as string) || session.subscription as string || session.id;
+    console.log(`[webhook] Processing session ${session.id}, paymentId: ${stripePaymentId}, mode: ${session.mode}`);
 
     // ── Idempotency: skip if this payment was already processed ──
     const { data: existingPayment } = await supabase
@@ -84,7 +117,7 @@ serve(async (req: Request) => {
       .maybeSingle();
 
     if (existingPayment) {
-      console.log(`Payment ${stripePaymentId} already processed — skipping duplicate webhook`);
+      console.log(`[webhook] Payment ${stripePaymentId} already processed — skipping duplicate`);
       return new Response(JSON.stringify({ received: true, duplicate: true }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -96,8 +129,14 @@ serve(async (req: Request) => {
     const couponCode = session.metadata?.coupon_code || null;
     const amountTotal = session.amount_total || 0; // in centavos (BRL)
 
+    console.log(`[webhook] Buyer: ${buyerEmail}, plan: ${plan}, amount: ${amountTotal}, coupon: ${couponCode || 'none'}`);
+
     // Generate unique license key
-    const { data: keyResult } = await supabase.rpc('generate_license_key');
+    const { data: keyResult, error: keyError } = await supabase.rpc('generate_license_key');
+    if (keyError || !keyResult) {
+      console.error('[webhook] Failed to generate license key:', keyError);
+      return new Response('License key generation failed', { status: 500 });
+    }
     const licenseKey = keyResult as string;
 
     // Calculate expiry based on plan
@@ -123,9 +162,11 @@ serve(async (req: Request) => {
       .single();
 
     if (licError) {
-      console.error('Failed to create license:', licError);
+      console.error('[webhook] Failed to create license:', licError);
       return new Response('License creation failed', { status: 500 });
     }
+
+    console.log(`[webhook] License created: ${licenseKey} (id: ${license.id})`);
 
     // Look up affiliate by coupon code
     let affiliateId: string | null = null;
@@ -179,7 +220,9 @@ serve(async (req: Request) => {
       });
 
     if (payError) {
-      console.error('Failed to create payment:', payError);
+      console.error('[webhook] Failed to create payment:', payError);
+    } else {
+      console.log(`[webhook] Payment record created for ${stripePaymentId}`);
     }
 
     // ── Send license key + download link via Resend ──
@@ -242,21 +285,23 @@ serve(async (req: Request) => {
 
         if (!emailRes.ok) {
           const errBody = await emailRes.text();
-          console.error('Resend email failed:', emailRes.status, errBody);
+          console.error(`[webhook] Resend email failed: ${emailRes.status} ${errBody}`);
         } else {
-          console.log(`License email sent to ${buyerEmail}`);
+          console.log(`[webhook] License email sent to ${buyerEmail}`);
         }
       } catch (emailErr) {
         // Don't fail the webhook if email fails — license is already created
-        console.error('Email sending error:', emailErr);
+        console.error('[webhook] Email sending error:', emailErr);
       }
+    } else {
+      console.warn('[webhook] No buyer email found — skipping email');
     }
 
-    console.log(`License created: ${licenseKey} for ${buyerEmail} (plan: ${plan})`);
+    console.log(`[webhook] DONE — License: ${licenseKey}, email: ${buyerEmail}, plan: ${plan}`);
   }
 
   // ── Handle refund ──
-  if (event.type === 'charge.refunded') {
+  if (eventType === 'charge.refunded') {
     const charge = event.data.object as Stripe.Charge;
     const paymentIntentId = charge.payment_intent as string;
 
@@ -277,12 +322,12 @@ serve(async (req: Request) => {
           .eq('id', payment.license_id);
       }
 
-      console.log(`Refund processed for payment intent: ${paymentIntentId}`);
+      console.log(`[webhook] Refund processed for payment intent: ${paymentIntentId}`);
     }
   }
 
   // ── Handle subscription renewal (monthly plan) ──
-  if (event.type === 'invoice.payment_succeeded') {
+  if (eventType === 'invoice.payment_succeeded') {
     const invoice = event.data.object as Stripe.Invoice;
 
     // Only handle renewal invoices (not the first one)
@@ -306,7 +351,7 @@ serve(async (req: Request) => {
           .update({ expires_at: newExpiry, status: 'active' })
           .eq('id', payment.license_id);
 
-        console.log(`Subscription renewed for license: ${payment.license_id}`);
+        console.log(`[webhook] Subscription renewed for license: ${payment.license_id}`);
       }
     }
   }

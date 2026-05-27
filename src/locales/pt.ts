@@ -225,6 +225,7 @@ export default {
   'settings.grid': 'Grade blueprint',
   'settings.behavior': 'COMPORTAMENTO',
   'settings.minimizeToTray': 'Minimizar pra bandeja ao fechar',
+  'settings.startWithWindows': 'Iniciar com o Windows',
   'settings.scheduler': 'LIMPEZA AGENDADA',
   'settings.schedulerToggle': 'Limpeza semanal automatica',
   'settings.schedulerDay': 'Dia',
@@ -507,4 +508,78 @@ export default {
   'bloat.Clipchamp': 'Clipchamp',
   'bloat.Cortana': 'Cortana',
   'bloat.MicrosoftStickyNotes': 'Sticky Notes',
+
+  // ── Onboarding wizard ──
+  'onboarding.welcome.title': 'Bem-vindo ao NTZ PCBooster',
+  'onboarding.welcome.desc': 'Seu PC vai render mais do que voce imagina. Vamos te mostrar como tirar o maximo dele em menos de 1 minuto.',
+  'onboarding.whatItDoes.title': 'O que o app faz?',
+  'onboarding.whatItDoes.desc': 'O PCBooster aplica otimizacoes reais no Windows e nos drivers da sua placa de video. Tudo reversivel.',
+  'onboarding.whatItDoes.feat1': 'Gaming Boost — otimizacoes de rede, CPU e memoria',
+  'onboarding.whatItDoes.feat2': 'GPU Boost — ajustes diretos no driver NVIDIA/AMD',
+  'onboarding.whatItDoes.feat3': 'Limpeza — remove lixo sem tocar em arquivos pessoais',
+  'onboarding.whatItDoes.feat4': 'Monitor — acompanhe CPU, GPU, RAM e rede em tempo real',
+  'onboarding.admin.title': 'Execute como Administrador',
+  'onboarding.admin.desc': 'Varias otimizacoes precisam de permissao de administrador pra funcionar. Sempre abra o app clicando com o botao direito e escolhendo "Executar como administrador".',
+  'onboarding.admin.tip': 'Dica: clique direito no atalho do app > Propriedades > Compatibilidade > marque "Executar como administrador"',
+  'onboarding.ready.title': 'Tudo pronto!',
+  'onboarding.ready.desc': 'Comece pelo Painel — la voce ve o estado do seu PC e pode ativar tudo com um clique. Cada pagina vai te dar dicas na primeira visita.',
+  'onboarding.skip': 'Pular',
+  'onboarding.next': 'Proximo',
+  'onboarding.start': 'Comecar!',
+
+  // ── Spotlight tour: Dashboard ──
+  'tour.dashboard.score.title': 'Score de Performance',
+  'tour.dashboard.score.desc': 'Este e o seu indice de otimizacao. Quanto mais otimizacoes voce ativar, maior sera o score. As barras ao lado detalham o progresso de cada categoria.',
+  'tour.dashboard.boost.title': 'Boost Completo',
+  'tour.dashboard.boost.desc': 'Com um clique, todas as otimizacoes de gaming sao aplicadas automaticamente — rede, CPU, memoria e mais. Tudo e 100% reversivel.',
+  'tour.dashboard.clean.title': 'Limpeza Completa',
+  'tour.dashboard.clean.desc': 'Remove arquivos temporarios, cache do Windows, prefetch e lixeira. Libera espaco em disco sem tocar nos seus arquivos pessoais.',
+  'tour.dashboard.realtime.title': 'Monitoramento em Tempo Real',
+  'tour.dashboard.realtime.desc': 'Acompanhe CPU, GPU, RAM, disco e rede ao vivo. Os graficos atualizam a cada segundo para voce ter controle total da sua maquina.',
+  'tour.dashboard.shortcuts.title': 'Atalhos Rapidos',
+  'tour.dashboard.shortcuts.desc': 'Acesse rapidamente as principais secoes do app e veja o historico das ultimas acoes realizadas.',
+
+  // ── Spotlight tour: Gaming Boost ──
+  'tour.gaming.row.title': 'Cada Otimizacao',
+  'tour.gaming.row.desc': 'Essa e uma otimizacao. Ao lado do titulo, voce vera se ela precisa de permissao de administrador e o nivel de risco. Fique tranquilo — tudo e reversivel, basta desligar.',
+  'tour.gaming.expand.title': 'Detalhes Completos',
+  'tour.gaming.expand.desc': 'Ao clicar no botao "+", voce vera uma explicacao completa do que essa otimizacao ira fazer no seu sistema.',
+  'tour.gaming.switch.title': 'Ativar / Desativar',
+  'tour.gaming.switch.desc': 'Use o switch para ativar ou desativar a otimizacao. Verde significa ativo. Ao desligar, a configuracao original e restaurada automaticamente.',
+  'tour.gaming.bulk.title': 'Ativar / Desativar Todos',
+  'tour.gaming.bulk.desc': 'Use esses botoes para ativar ou desativar todas as otimizacoes de uma vez. Ideal para aplicar tudo rapidamente ou reverter tudo de volta ao original.',
+  'tour.gaming.toolbar.title': 'Filtros e Busca',
+  'tour.gaming.toolbar.desc': 'Pesquise otimizacoes por nome ou filtre por nivel de risco para encontrar exatamente o que precisa.',
+
+  // ── Spotlight tour: GPU Boost ──
+  'tour.gpu.row.title': 'Otimizacao de GPU',
+  'tour.gpu.row.desc': 'Essas otimizacoes alteram configuracoes diretamente no driver da sua placa de video. O efeito e visivel no Painel de Controle NVIDIA ou AMD.',
+  'tour.gpu.undo.title': 'Totalmente Reversivel',
+  'tour.gpu.undo.desc': 'Quer voltar ao normal? Basta desativar o toggle e o app restaura a configuracao original do driver automaticamente.',
+
+  // ── Spotlight tour: Tweaks ──
+  'tour.tweaks.row.title': 'Tweaks do Sistema',
+  'tour.tweaks.row.desc': 'Ajustes visuais e de privacidade do Windows. Nao afetam performance — apenas personalizam o sistema do seu jeito. Tudo reversivel.',
+  'tour.tweaks.toggle.title': 'Ativar / Desativar',
+  'tour.tweaks.toggle.desc': 'Use o switch para aplicar ou reverter o ajuste. Desligar restaura a configuracao original do Windows.',
+  'tour.tweaks.toolbar.title': 'Filtros e Busca',
+  'tour.tweaks.toolbar.desc': 'Encontre tweaks por nome ou filtre por categoria. Use os botoes para ativar ou desativar todos de uma vez.',
+
+  // ── Spotlight tour: Limpeza ──
+  'tour.limpeza.row.title': 'Limpeza Segura',
+  'tour.limpeza.row.desc': 'Cada item limpa um tipo de arquivo temporario. Seus documentos, fotos e jogos nunca sao tocados. Va em Configuracoes para agendar limpeza automatica.',
+
+  // ── Spotlight tour: Startup ──
+  'tour.startup.toolbar.title': 'Pesquisa e Filtros',
+  'tour.startup.toolbar.desc': 'Filtre programas por status (ativos, inativos, sistema) ou pesquise pelo nome para encontrar rapidamente.',
+  'tour.startup.list.title': 'Programas na Inicializacao',
+  'tour.startup.list.desc': 'Desative programas que abrem junto com o Windows. Menos programas na inicializacao significa um boot mais rapido e menos consumo de RAM.',
+
+  // ── Spotlight tour: Settings ──
+  'tour.settings.overview.title': 'Suas Configuracoes',
+  'tour.settings.overview.desc': 'Ajuste idioma, agendamento de limpeza e exporte ou importe suas configuracoes. Voce tambem pode rever o tutorial a qualquer momento.',
+  'hints.next': 'Proximo',
+  'hints.gotIt': 'Entendi',
+  'hints.skipAll': 'Pular dicas',
+  'hints.resetTutorial': 'Rever tutorial',
 } as Record<string, string>;

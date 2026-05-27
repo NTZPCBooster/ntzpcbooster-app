@@ -42,7 +42,7 @@ export const OPTIMIZATIONS: Optimization[] = [
     admin: true,
     risk: 'baixo',
     icon: 'bolt',
-    script: `powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61; powercfg -setactive e9a42b02-d5df-448d-aa00-03f14749eb61`,
+    script: `$null=powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 2>$null;powercfg -setactive e9a42b02-d5df-448d-aa00-03f14749eb61 2>$null;if($LASTEXITCODE-ne 0){$l=powercfg -list|Select-String 'Ultimate|Desempenho';if($l){$g=[regex]::Match($l,'[a-f0-9-]{36}').Value;if($g){powercfg -setactive $g}}}`,
     undoScript: `powercfg -setactive 381b4222-f694-41f0-9685-ff5bb260df2e`,
   },
   {
@@ -369,8 +369,8 @@ export const OPTIMIZATIONS: Optimization[] = [
     admin: true,
     risk: 'baixo',
     icon: 'bolt',
-    script: `${NV_DRS};$r=[NvDRS]::Set(0x1057EB71,1);if($r-ne 0){throw "NvAPI DRS error: $r"}`,
-    undoScript: `${NV_DRS};[NvDRS]::Set(0x1057EB71,0)|Out-Null`,
+    script: `${NV_DRS};$r=[NvDRS]::Set(0x1057EB71,1);if($r-ne 0){throw "NvAPI DRS error: $r"};reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v PowerMode /t REG_DWORD /d 1 /f|Out-Null`,
+    undoScript: `${NV_DRS};[NvDRS]::Set(0x1057EB71,0)|Out-Null;reg delete "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v PowerMode /f 2>$null`,
   },
   {
     id: 'nv-low-latency',
@@ -381,8 +381,8 @@ export const OPTIMIZATIONS: Optimization[] = [
     admin: true,
     risk: 'nenhum',
     icon: 'zap',
-    script: `${NV_DRS};$r=[NvDRS]::Set(0x007BA09E,1);if($r-ne 0){throw "NvAPI DRS error: $r"}`,
-    undoScript: `${NV_DRS};[NvDRS]::Set(0x007BA09E,0)|Out-Null`,
+    script: `${NV_DRS};$r=[NvDRS]::Set(0x007BA09E,1);if($r-ne 0){throw "NvAPI DRS error: $r"};reg add "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v LowLatency /t REG_DWORD /d 1 /f|Out-Null`,
+    undoScript: `${NV_DRS};[NvDRS]::Set(0x007BA09E,0)|Out-Null;reg delete "HKLM\\SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak" /v LowLatency /f 2>$null`,
   },
   {
     id: 'nv-threaded-opt',

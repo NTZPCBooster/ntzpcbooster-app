@@ -225,6 +225,7 @@ export default {
   'settings.grid': 'Blueprint grid',
   'settings.behavior': 'BEHAVIOR',
   'settings.minimizeToTray': 'Minimize to tray on close',
+  'settings.startWithWindows': 'Start with Windows',
   'settings.scheduler': 'SCHEDULED CLEANUP',
   'settings.schedulerToggle': 'Automatic weekly cleanup',
   'settings.schedulerDay': 'Day',
@@ -507,4 +508,78 @@ export default {
   'bloat.Clipchamp': 'Clipchamp',
   'bloat.Cortana': 'Cortana',
   'bloat.MicrosoftStickyNotes': 'Sticky Notes',
+
+  // ── Onboarding wizard ──
+  'onboarding.welcome.title': 'Welcome to NTZ PCBooster',
+  'onboarding.welcome.desc': 'Your PC can do more than you think. Let us show you how to get the most out of it in under 1 minute.',
+  'onboarding.whatItDoes.title': 'What does the app do?',
+  'onboarding.whatItDoes.desc': 'PCBooster applies real optimizations to Windows and your GPU drivers. Everything is reversible.',
+  'onboarding.whatItDoes.feat1': 'Gaming Boost — network, CPU, and memory tweaks',
+  'onboarding.whatItDoes.feat2': 'GPU Boost — direct NVIDIA/AMD driver settings',
+  'onboarding.whatItDoes.feat3': 'Cleanup — removes junk without touching personal files',
+  'onboarding.whatItDoes.feat4': 'Monitor — track CPU, GPU, RAM and network in real time',
+  'onboarding.admin.title': 'Run as Administrator',
+  'onboarding.admin.desc': 'Many optimizations require admin permissions. Always open the app by right-clicking and choosing "Run as administrator".',
+  'onboarding.admin.tip': 'Tip: right-click the app shortcut > Properties > Compatibility > check "Run as administrator"',
+  'onboarding.ready.title': 'All set!',
+  'onboarding.ready.desc': 'Start at the Dashboard — there you can see your PC status and boost everything with one click. Each page will show tips on your first visit.',
+  'onboarding.skip': 'Skip',
+  'onboarding.next': 'Next',
+  'onboarding.start': 'Let\'s go!',
+
+  // ── Spotlight tour: Dashboard ──
+  'tour.dashboard.score.title': 'Performance Score',
+  'tour.dashboard.score.desc': 'This is your optimization index. The more optimizations you enable, the higher your score. The bars beside it show progress per category.',
+  'tour.dashboard.boost.title': 'Full Boost',
+  'tour.dashboard.boost.desc': 'One click applies all gaming optimizations automatically — network, CPU, memory and more. Everything is 100% reversible.',
+  'tour.dashboard.clean.title': 'Full Cleanup',
+  'tour.dashboard.clean.desc': 'Removes temp files, Windows cache, prefetch and recycle bin. Frees disk space without touching your personal files.',
+  'tour.dashboard.realtime.title': 'Real-Time Monitoring',
+  'tour.dashboard.realtime.desc': 'Track CPU, GPU, RAM, disk and network live. Graphs update every second so you stay in full control of your machine.',
+  'tour.dashboard.shortcuts.title': 'Quick Shortcuts',
+  'tour.dashboard.shortcuts.desc': 'Jump straight to the main sections of the app and review the history of recent actions.',
+
+  // ── Spotlight tour: Gaming Boost ──
+  'tour.gaming.row.title': 'Each Optimization',
+  'tour.gaming.row.desc': 'This is an optimization. Next to the title you\'ll see if it requires admin permissions and its risk level. Don\'t worry — everything is reversible, just turn it off.',
+  'tour.gaming.expand.title': 'Full Details',
+  'tour.gaming.expand.desc': 'Click the "+" button to see a complete explanation of what this optimization will do to your system.',
+  'tour.gaming.switch.title': 'Enable / Disable',
+  'tour.gaming.switch.desc': 'Use the switch to enable or disable the optimization. Green means active. Turning it off automatically restores the original setting.',
+  'tour.gaming.bulk.title': 'Enable / Disable All',
+  'tour.gaming.bulk.desc': 'Use these buttons to enable or disable all optimizations at once. Perfect for applying everything quickly or reverting back to defaults.',
+  'tour.gaming.toolbar.title': 'Filters & Search',
+  'tour.gaming.toolbar.desc': 'Search optimizations by name or filter by risk level to find exactly what you need.',
+
+  // ── Spotlight tour: GPU Boost ──
+  'tour.gpu.row.title': 'GPU Optimization',
+  'tour.gpu.row.desc': 'These optimizations change settings directly in your graphics card driver. The effect is visible in the NVIDIA or AMD Control Panel.',
+  'tour.gpu.undo.title': 'Fully Reversible',
+  'tour.gpu.undo.desc': 'Want to go back to normal? Just turn off the toggle and the app automatically restores the original driver setting.',
+
+  // ── Spotlight tour: Tweaks ──
+  'tour.tweaks.row.title': 'System Tweaks',
+  'tour.tweaks.row.desc': 'Visual and privacy adjustments for Windows. These don\'t affect performance — they just customize the system your way. Fully reversible.',
+  'tour.tweaks.toggle.title': 'Enable / Disable',
+  'tour.tweaks.toggle.desc': 'Use the switch to apply or revert the tweak. Turning it off restores the original Windows setting.',
+  'tour.tweaks.toolbar.title': 'Filters & Search',
+  'tour.tweaks.toolbar.desc': 'Find tweaks by name or filter by category. Use the buttons to enable or disable all at once.',
+
+  // ── Spotlight tour: Limpeza ──
+  'tour.limpeza.row.title': 'Safe Cleanup',
+  'tour.limpeza.row.desc': 'Each item cleans a type of temp file. Your documents, photos and games are never touched. Go to Settings to schedule automatic cleanup.',
+
+  // ── Spotlight tour: Startup ──
+  'tour.startup.toolbar.title': 'Search & Filters',
+  'tour.startup.toolbar.desc': 'Filter programs by status (active, inactive, system) or search by name to find them quickly.',
+  'tour.startup.list.title': 'Startup Programs',
+  'tour.startup.list.desc': 'Disable programs that launch with Windows. Fewer startup programs means faster boot times and less RAM usage.',
+
+  // ── Spotlight tour: Settings ──
+  'tour.settings.overview.title': 'Your Settings',
+  'tour.settings.overview.desc': 'Adjust language, cleanup schedule, and export or import your settings. You can also replay the tutorial anytime.',
+  'hints.next': 'Next',
+  'hints.gotIt': 'Got it',
+  'hints.skipAll': 'Skip tips',
+  'hints.resetTutorial': 'Replay tutorial',
 } as Record<string, string>;

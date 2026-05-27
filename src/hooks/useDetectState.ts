@@ -43,7 +43,7 @@ const DETECT_SCRIPT = [
   `function _S($n){try{return(Get-Service $n -EA Stop).StartType.ToString()}catch{return ''}}`,
   `$r=@{}`,
   // ── Gaming ──
-  `try{$r['ultimate-power']=[bool]((powercfg /getactivescheme) -match 'e9a42b02')}catch{$r['ultimate-power']=$false}`,
+  `try{$a=powercfg /getactivescheme;$r['ultimate-power']=[bool]($a -match 'e9a42b02' -or $a -match 'Ultimate' -or $a -match 'ltimo')}catch{$r['ultimate-power']=$false}`,
   `$r['core-isolation']=(_M 'SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity' 'Enabled') -eq 0`,
   `if([Environment]::OSVersion.Version.Build -ge 22000){$r['game-bar']=(_U 'Software\\Microsoft\\Windows\\CurrentVersion\\BackgroundAccessApplications\\Microsoft.XboxGamingOverlay_8wekyb3d8bbwe' 'Disabled') -eq 1}else{$r['game-bar']=(_U 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\GameDVR' 'AppCaptureEnabled') -eq 0}`,
   `$r['bg-apps']=(_U 'Software\\Microsoft\\Windows\\CurrentVersion\\BackgroundAccessApplications' 'GlobalUserDisabled') -eq 1`,
@@ -60,7 +60,7 @@ const DETECT_SCRIPT = [
   `$r['gpu-sched']=(_M 'SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers' 'HwSchMode') -eq 2`,
   `$r['power-throttle']=(_M 'SYSTEM\\CurrentControlSet\\Control\\Power\\PowerThrottling' 'PowerThrottlingOff') -eq 1`,
   `$r['print-spool']=(_S 'Spooler') -eq 'Disabled'`,
-  `$r['ntfs-opt']=(_M 'SYSTEM\\CurrentControlSet\\Control\\FileSystem' 'NtfsDisableLastAccessUpdate') -eq 1`,
+  `$v=_M 'SYSTEM\\CurrentControlSet\\Control\\FileSystem' 'NtfsDisableLastAccessUpdate';$r['ntfs-opt']=$v -ne '__NF__' -and ([long]$v -band 1) -eq 1`,
   `$r['gpu-perf']=[bool]((_U 'Software\\Microsoft\\DirectX\\UserGpuPreferences' 'DirectXUserGlobalSettings') -match 'GpuPreference=2')`,
   `$r['game-mode']=(_U 'Software\\Microsoft\\GameBar' 'AllowAutoGameMode') -eq 0`,
   `$r['fast-startup']=(_M 'SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power' 'HiberbootEnabled') -eq 0`,
@@ -69,8 +69,8 @@ const DETECT_SCRIPT = [
   `$r['edge-bg']=(_M 'SOFTWARE\\Policies\\Microsoft\\Edge' 'StartupBoostEnabled') -eq 0`,
   `$r['nv-opt']=((_M 'SOFTWARE\\NVIDIA Corporation\\NvControlPanel2\\Client' 'OptInOrOutPreference') -eq 0) -and ((_M 'SYSTEM\\CurrentControlSet\\Services\\nvlddmkm\\Global\\NVTweak' 'RmGpsPsEnablePerCpuCoreDpc') -eq 1)`,
   // ── GPU NVIDIA ──
-  `try{$nvOk=$false;Get-ChildItem 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}' -EA Stop|ForEach-Object{$d=(Get-ItemProperty $_.PSPath -Name DriverDesc -EA SilentlyContinue).DriverDesc;if($d -match 'NVIDIA'){$v=(Get-ItemProperty $_.PSPath -Name PowerMizerLevel -EA SilentlyContinue).PowerMizerLevel;if($v -eq 1){$nvOk=$true}}};$r['nv-power-max']=$nvOk}catch{$r['nv-power-max']=$false}`,
-  `$r['nv-low-latency']=(_M 'SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak' 'Low_Latency_Mode') -eq 2`,
+  `$r['nv-power-max']=(_M 'SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak' 'PowerMode') -eq 1`,
+  `$r['nv-low-latency']=(_M 'SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak' 'LowLatency') -eq 1`,
   `$r['nv-threaded-opt']=(_M 'SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak' 'Threaded_Optimization') -eq 1`,
   `$r['nv-tex-quality']=(_M 'SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak' 'Texture_Filtering_Quality') -eq 0`,
   `$r['nv-vsync-off']=(_M 'SOFTWARE\\NVIDIA Corporation\\Global\\NVTweak' 'VSyncMode') -eq 0`,
