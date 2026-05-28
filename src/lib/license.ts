@@ -15,7 +15,7 @@ const API_URL = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL || '';
 const API_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 const STORAGE_KEY = 'pcboost_lic';
-const CHECK_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
+const MAX_OFFLINE_GRACE = 7 * 24 * 60 * 60 * 1000; // 7 days max without server check
 
 // ── Types ─────────────────────────────────────────
 export interface LicenseInfo {
@@ -155,27 +155,25 @@ export async function validateKey(
   }
 }
 
-// ── Periodic Revalidation ─────────────────────────
+// ── Revalidation on Every Launch ─────────────────
 /**
  * Checks if the stored license is still valid.
- * - Within 24h of last check: valid (offline grace).
- * - After 24h: tries server revalidation.
- * - No internet after 24h: still valid (grace period).
- * - Server says invalid: clears license.
+ * Always tries to contact the server on every app launch.
+ * - Server reachable + valid: update lastChecked, allow.
+ * - Server reachable + invalid/revoked: clear license, block.
+ * - Server unreachable: allow for up to MAX_OFFLINE_GRACE (7 days).
+ * - Offline beyond 7 days: clear license, block.
  */
 export async function checkStoredLicense(): Promise<boolean> {
   const license = getLicense();
   if (!license) return false;
 
-  const elapsed = Date.now() - new Date(license.lastChecked).getTime();
-
-  // Within grace period — valid without server check
-  if (elapsed < CHECK_INTERVAL) return true;
-
   // Dev mode — always valid
   if (!API_URL) return true;
 
-  // Try server revalidation
+  const elapsed = Date.now() - new Date(license.lastChecked).getTime();
+
+  // Always try server check
   try {
     const res = await fetch(`${API_URL}/check`, {
       method: 'POST',
@@ -194,11 +192,14 @@ export async function checkStoredLicense(): Promise<boolean> {
       return true;
     }
 
-    // License revoked
+    // Server says invalid (revoked, expired, wrong mobo, etc.)
     clearLicense();
     return false;
   } catch {
-    // No internet — extend grace period
-    return true;
+    // No internet — allow offline grace up to 7 days
+    if (elapsed < MAX_OFFLINE_GRACE) return true;
+    // Offline too long — require connection
+    clearLicense();
+    return false;
   }
 }

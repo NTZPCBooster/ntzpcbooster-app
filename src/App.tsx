@@ -79,14 +79,11 @@ function App() {
       setLicensed(false);
       return;
     }
-    // Optimistic: show app immediately, revalidate in background
-    setLicensed(true);
+    // Validate with server before granting access
     setLicense(stored);
     checkStoredLicense().then(valid => {
-      if (!valid) {
-        setLicensed(false);
-        setLicense(null);
-      }
+      setLicensed(valid);
+      if (!valid) setLicense(null);
     });
   }, []);
 

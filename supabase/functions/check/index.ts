@@ -50,7 +50,32 @@ serve(async (req: Request) => {
       );
     }
 
-    // Must be active
+    // Revoked or expired by admin — reject immediately
+    if (license.status === 'revoked' || license.status === 'expired') {
+      return new Response(
+        JSON.stringify({ valid: false }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
+    // Pending = activated offline (v1.3.2 dev mode). Activate now with mobo binding.
+    if (license.status === 'pending') {
+      await supabase
+        .from('licenses')
+        .update({
+          mobo_id: moboId,
+          status: 'active',
+          activated_at: new Date().toISOString(),
+        })
+        .eq('id', license.id);
+
+      return new Response(
+        JSON.stringify({ valid: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
+    // Must be active at this point
     if (license.status !== 'active') {
       return new Response(
         JSON.stringify({ valid: false }),
@@ -58,12 +83,20 @@ serve(async (req: Request) => {
       );
     }
 
-    // Must match motherboard
+    // Must match motherboard (or bind if not yet bound)
     if (license.mobo_id && license.mobo_id !== moboId) {
       return new Response(
         JSON.stringify({ valid: false }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
+    }
+
+    // Bind mobo if not yet bound
+    if (!license.mobo_id && moboId) {
+      await supabase
+        .from('licenses')
+        .update({ mobo_id: moboId })
+        .eq('id', license.id);
     }
 
     // Check expiry for monthly plans

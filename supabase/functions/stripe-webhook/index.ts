@@ -239,8 +239,8 @@ serve(async (req: Request) => {
 <body style="margin:0;padding:0;background:#0a0a0a;font-family:'Segoe UI',Arial,sans-serif;">
   <div style="max-width:560px;margin:0 auto;padding:40px 24px;">
     <div style="text-align:center;margin-bottom:32px;">
-      <h1 style="color:#00ff41;font-size:22px;margin:0;letter-spacing:1px;">NTZ PCBOOSTER</h1>
-      <p style="color:#666;font-size:13px;margin:6px 0 0;">Otimizacao de PC para jogos</p>
+      <img src="https://raw.githubusercontent.com/NTZPCBooster/ntzpcbooster-app/main/public/logo-email.png" alt="NTZ PCBooster" width="100" height="100" style="display:block;margin:0 auto 12px;" />
+      <p style="color:#666;font-size:13px;margin:0;">Otimizacao de PC para jogos</p>
     </div>
     <div style="background:#111;border:1px solid #1a1a1a;border-radius:12px;padding:32px;text-align:center;">
       <h2 style="color:#fff;font-size:20px;margin:0 0 8px;">Compra confirmada!</h2>
